@@ -126,24 +126,28 @@ try:
      xA=newctx(br)
      try:a=openp(xA,A,'admin')
      except Exception as e:print('  NOTE  page did not show .card/header with test CONFIG: %s'%str(e)[:80]);raise NoBaseRT()
-     keys=a.evaluate("(T=>T?[...new Set(Object.values(T).map(o=>Object.keys(o)).flat())].filter(k=>['en','fr','af'].some(l=>!T[l]||T[l][k]==null)):['NO TEXT TABLE'])(%s)"%TJS)
-     ok(keys==[],'every text exists in EN, FR and AF %s'%keys[:5])
-     sec('0b. Languages: English, French, Afrikaans (no Arabic, no right-to-left)')
-     lt=a.evaluate("(T=>({langs:Object.keys(T),miss:Object.keys(T.en).filter(k=>!T.af||T.af[k]==null||String(T.af[k]).trim()===''),same:Object.keys(T.en).filter(k=>T.af&&T.af[k]===T.en[k]&&/[a-z]{4,}/i.test(T.en[k]))}))(%s)"%TJS)
-     ok('af' in lt['langs'],'Afrikaans (af) text table present %s'%lt['langs'])
-     ok('ar' not in lt['langs'],'Arabic (ar) text table gone %s'%lt['langs'])
-     ok(lt['langs']==['en','fr','af'],'languages are exactly EN, FR, AF %s'%lt['langs'])
-     ok(lt['miss']==[],'every English text has an Afrikaans text %s'%lt['miss'][:5])
+     keys=a.evaluate("(T=>T?[...new Set(Object.values(T).map(o=>Object.keys(o)).flat())].filter(k=>['en','fr','ar','af'].some(l=>!T[l]||T[l][k]==null||String(T[l][k]).trim()==='')):['NO TEXT TABLE'])(%s)"%TJS)
+     ok(keys==[],'every text exists in EN, FR, AR and AF %s'%keys[:5])
+     sec('0b. Languages: English, French, Arabic and Afrikaans (Arabic is right-to-left)')
+     lt=a.evaluate("(T=>{const miss=l=>Object.keys(T.en).filter(k=>!T[l]||T[l][k]==null||String(T[l][k]).trim()==='');return {langs:Object.keys(T),missFr:miss('fr'),missAr:miss('ar'),missAf:miss('af'),same:Object.keys(T.en).filter(k=>T.af&&T.af[k]===T.en[k]&&/[a-z]{4,}/i.test(T.en[k]))}})(%s)"%TJS)
+     ok('en' in lt['langs'] and 'fr' in lt['langs'] and 'ar' in lt['langs'],'EN, FR and AR text tables present %s'%lt['langs'])
+     ok('af' in lt['langs'],'Afrikaans (af) text table still present %s'%lt['langs'])
+     ok(not lt['missFr'] and not lt['missAr'] and not lt['missAf'],'every English text has FR, AR and AF %s'%({'fr':lt['missFr'][:5],'ar':lt['missAr'][:5],'af':lt['missAf'][:5]} if (lt['missFr'] or lt['missAr'] or lt['missAf']) else ''))
      print('  NOTE  af texts same as English (check they are fine in Afrikaans): %s'%lt['same'][:12])
-     ok(not re.search('[\u0600-\u06FF]',src),'no Arabic letters anywhere in index.html')
-     ok(not re.search(r'["\']rtl["\']|direction\s*:\s*rtl|unicode-bidi|ar-TD|"ar"\s*:|\bar\s*:\s*\{',src),'no right-to-left / Arabic code left in index.html (rtl, unicode-bidi, ar-TD, ar:)')
-     ok(re.search(r'"en"\s*,\s*"fr"\s*,\s*"af"',src) is not None and 'Afrikaans' in src,'language pickers list en, fr, af ("Afrikaans")')
-     ok(all(isinstance(pp,dict) and pp.get('af') and 'ar' not in pp for pp in (cfg.get('PERMS') or [])),'every CONFIG.PERMS label has "af" and no "ar"')
-     xo=newctx(br);xo.add_init_script("try{if(!sessionStorage.getItem('_t')){localStorage.setItem(%r,'ar');sessionStorage.setItem('_t','1')}}catch(e){}"%(CA['APP_ID']+'_lang'));o=openp(xo,A,'arfall')
-     fo=o.evaluate("({lang:document.documentElement.lang,dir:document.documentElement.dir,saved:localStorage.getItem(%r),opts:[...document.querySelectorAll('#langSel option,#hLang option')].map(e=>e.value)})"%(CA['APP_ID']+'_lang'))
-     ok(fo['lang']=='en' and fo['dir']=='ltr' and fo['saved']=='en','phone with "ar" saved falls back to English and saves "en" %s'%fo)
-     ok('ar' not in fo['opts'] and 'af' in fo['opts'],'language list on screen has AF, no AR %s'%fo['opts'])
+     ok(re.search(r'[\u0600-\u06FF]',src) is not None,'Arabic letters present in index.html')
+     ok(re.search(r'dir=lang==="ar"\s*\?\s*"rtl"',src) is not None and 'ar-TD-u-nu-latn' in src,'Arabic sets right-to-left and uses Latin digits (ar-TD-u-nu-latn)')
+     ok(re.search(r'LANGS\s*=\s*\[\s*"en"\s*,\s*"fr"\s*,\s*"ar"\s*,\s*"af"\s*\]',src) is not None and 'Afrikaans' in src and 'العربية' in src,'language pickers list en, fr, ar, af')
+     ok(all(isinstance(pp,dict) and pp.get('af') and pp.get('ar') for pp in (cfg.get('PERMS') or [])),'every CONFIG.PERMS label has "af" and "ar"')
+     xo=newctx(br);xo.add_init_script("try{if(!sessionStorage.getItem('_t')){localStorage.setItem(%r,'ar');sessionStorage.setItem('_t','1')}}catch(e){}"%(CA['APP_ID']+'_lang'));o=openp(xo,A,'arkeep')
+     fo=o.evaluate("({lang:document.documentElement.lang,dir:document.documentElement.dir,saved:localStorage.getItem(%r),opts:[...document.querySelectorAll('#langSel option,#hLang option')].map(e=>e.value),go:(document.querySelector('.tmcS-go, #fName2')||{}).textContent||''})"%(CA['APP_ID']+'_lang'))
+     ok(fo['lang']=='ar' and fo['dir']=='rtl' and fo['saved']=='ar','phone with "ar" saved stays in Arabic (rtl) and does not fall back to English %s'%fo)
+     ok('ar' in fo['opts'] and 'af' in fo['opts'] and 'fr' in fo['opts'] and 'en' in fo['opts'] and fo['opts']==['en','fr','ar','af'],'language list on screen has EN, FR, AR and AF %s'%fo['opts'])
+     ok('متابعة' in (fo['go'] or '') or 'العربية' in o.inner_text('body'),'Arabic sign-in text is shown, not English')
      xo.close()
+     xunk=newctx(br);xunk.add_init_script("try{if(!sessionStorage.getItem('_t')){localStorage.setItem(%r,'xx');sessionStorage.setItem('_t','1')}}catch(e){}"%(CA['APP_ID']+'_lang'));ou=openp(xunk,A,'unklang')
+     fu=ou.evaluate("({lang:document.documentElement.lang,dir:document.documentElement.dir,saved:localStorage.getItem(%r)})"%(CA['APP_ID']+'_lang'))
+     ok(fu['lang']=='en' and fu['dir']=='ltr' and fu['saved']=='en','unknown saved language falls back to English %s'%fu)
+     xunk.close()
      if not a.evaluate("typeof TMC.me==='function'&&typeof TMC.put==='function'&&typeof TMC.pending==='function'"):raise NoBaseRT()
 
      sec('1. First Admin setup')
@@ -234,7 +238,7 @@ try:
        ir.locator('[data-ud=reject]').click();a.click('#dscY');a.wait_for_timeout(1500);synced(a)
        ok(ir.count()==0 and not any(x['id']==iid for x in U(P1)) and any(x['id']==mid for x in U(P1)) and a.evaluate("TMC.isMain(TMC.me())"),'pending impostor rejected → removed; the real main Admin stays')
      else:ok(False,'pending impostor row not shown')
-     ok(a.evaluate("['fr','af'].every(l=>!!(T[l]&&T[l].dscMain))") if a.evaluate("typeof T!=='undefined'") else True,'main-Admin message in FR and AF')
+     ok(a.evaluate("['fr','af','ar'].every(l=>!!(T[l]&&T[l].dscMain))") if a.evaluate("typeof T!=='undefined'") else True,'main-Admin message in FR, AF and AR')
      aid=[x for x in U(P1) if x.get('admin')][0];r_=post(P1,'code-a',[{'kind':'u','id':aid['id'],'u':int(time.time()*1000)+30,'del':0,'data':dict(aid,status='blocked')}])
      ok([x for x in U(P1) if x['id']==aid['id']][0]['status']=='active' and r_.get('refusedWhy')=='main_admin','server: team code cannot block the main Admin (refusedWhy main_admin)')
      r_=post(P1,'code-a',[{'kind':'u','id':aid['id'],'u':int(time.time()*1000)+31,'del':1,'purge':1,'data':{'discarded':1}}])
@@ -314,11 +318,16 @@ try:
      ok(a.evaluate("CONFIG.VER")==2 and home(a) and isadm(a),'new version → updated itself: version 2, still signed in as Admin')
      ok(a.evaluate("caches.keys()")==['testa-v2'] or set(a.evaluate("caches.keys()"))>={'testa-v2'} and 'testa-v1' not in a.evaluate("caches.keys()"),'old cache testa-v1 removed, testa-v2 kept')
 
-     sec('9. EN / FR / AF')
+     sec('9. EN / FR / AR / AF')
      x=newctx(br);g=openp(x,A,'lang')
      g.select_option('#langSel','fr');ok('Continuer' in g.inner_text('.card') and g.evaluate("document.documentElement.dir")=='ltr','French sign-in');shot(g,'signin-fr')
      g.select_option('#langSel','af');ok('Gaan aan' in g.inner_text('.card') and g.evaluate("document.documentElement.dir")=='ltr' and g.evaluate("document.documentElement.lang")=='af','Afrikaans sign-in, left-to-right');shot(g,'signin-af');afshot(g,'af-signin')
      name(g,'ja kirsten');pin(g,pin_of(0));ok('Tuis' in g.inner_text('nav') and g.evaluate("document.documentElement.dir")=='ltr','Afrikaans Home, left-to-right');shot(g,'home-af');afshot(g,'af-home');afshot(g,'af-home-full',True)
+     g.select_option('#hLang','ar');g.wait_for_timeout(300)
+     ok('الرئيسية' in g.inner_text('nav') and g.evaluate("document.documentElement.dir")=='rtl' and g.evaluate("document.documentElement.lang")=='ar','Arabic Home, right-to-left')
+     ad=g.evaluate("""()=>{const s=(document.getElementById('hDate')||{}).textContent||'';const sample=new Date(2026,10,10).toLocaleDateString('ar-TD-u-nu-latn',{weekday:'long',day:'numeric',month:'long',year:'numeric'});const arab=/[\u0660-\u0669\u06F0-\u06F9]/;return {s,sample,hasYear:/\\b2026\\b/.test(s+' '+sample),hasLatn:/[0-9]/.test(s+sample),arab:arab.test(s)||arab.test(sample)}}""")
+     ok(ad['hasYear'] and ad['hasLatn'] and not ad['arab'],'Arabic dates use Latin digits (e.g. 10 / 2026), not Arabic-Indic %s'%ad)
+     shot(g,'home-ar')
      g.click('nav [data-tab=settings]');g.select_option('#langSel','fr');ok('Réglages' in g.inner_text('nav'),'switch to French in Settings');shot(g,'settings-fr');nopw(g,'settings')
      ok(g.evaluate("document.getElementById('sCode').classList.contains('msk')&&!document.getElementById('sCode').classList.contains('shw')"),'sync values hidden in Settings')
      x.close()
@@ -648,7 +657,7 @@ try:
      else:
       w.click('nav [data-tab=home]');w.wait_for_timeout(300)
       for vw in (360,390):
-       for lg in ('en','fr','af'):
+       for lg in ('en','fr','af','ar'):
         w.set_viewport_size({'width':vw,'height':800});w.select_option('#hLang',lg);w.wait_for_timeout(250)
         hd=w.evaluate("""(()=>{const h=document.getElementById('hBand'),r=h.getBoundingClientRect(),q=s=>h.querySelector(s),nm=TMC.me().name,
           vis=e=>{if(!e)return false;const b=e.getBoundingClientRect();return b.width>0&&b.left>=-1&&b.right<=innerWidth+1&&b.top>=r.top-1&&b.bottom<=r.bottom+1};
@@ -674,7 +683,7 @@ try:
         st=w.evaluate("(()=>{const r=e=>e?e.getBoundingClientRect():null,g=e=>e?getComputedStyle(e):null,h=document.getElementById('hBand'),t=document.getElementById('sTime'),l=document.getElementById('hLang');return {hH:Math.round(r(h).height),tF:g(t).fontSize,lW:Math.round(r(l).width),lH:Math.round(r(l).height),bf:g(document.querySelector('#view button')).fontFamily==g(document.body).fontFamily}})()")
         ok(st['bf'],'%s: buttons use the page font (font:inherit) %s'%(tag,st))
         ok(hd['scroll'],'%s: no sideways scroll'%tag)
-        ok(hd['dir']=='ltr','%s: direction %s'%(tag,hd['dir']))
+        ok(hd['dir']==('rtl' if lg=='ar' else 'ltr'),'%s: direction %s'%(tag,hd['dir']))
         lo=w.evaluate("(()=>{const b=document.getElementById('hOut'),h=document.getElementById('hHero');if(!b)return null;const r=b.getBoundingClientRect(),v=document.getElementById('view').getBoundingClientRect();return {after:h.nextElementSibling===b,h:r.height,full:r.width>=v.width-40,txt:b.textContent.trim()}})()")
         ok(lo and lo['after'] and lo['h']>=56 and lo['full'] and lo['txt'].startswith('🚪') and lo['txt']==w.evaluate("TMC.T?TMC.T[%r].logout:''"%lg),'%s: big full-width 🚪 Log out band right after the title card %s'%(tag,lo))
         tt=w.evaluate("(()=>{const g=s=>[...document.querySelectorAll(s)].map(b=>({k:b.dataset.tab,ic:b.querySelector('b,.ticon').textContent.trim(),n:(b.querySelector('.tlab')?b.querySelector('.tlab').textContent:b.textContent.replace(b.querySelector('b').textContent,'')).replace(/\\s*\\(\\d+\\)$/,'').trim()}));return {tabs:g('nav.tabs button').filter(x=>x.k!=='home'),tiles:g('#view .tiles .tile')}})()")
@@ -703,7 +712,7 @@ try:
        hs=w.evaluate("[...document.querySelectorAll('#exPh label')].map(e=>e.getBoundingClientRect().height)");ok(len(hs)==2 and min(hs)>=56,'both photo buttons >=56px high %s'%hs)
        ok(w.evaluate("(()=>{const c=document.querySelector('#exPh .phCam input'),g=document.querySelector('#exPh .phGal input');return c.getAttribute('capture')==='environment'&&!g.hasAttribute('capture')&&c.accept==='image/*'&&g.accept==='image/*'})()"),'capture only on the camera button; both accept image/*')
        ok('📷' in w.inner_text('#exPh .phCam') and '🖼️' in w.inner_text('#exPh .phGal'),'icons + text on both photo buttons')
-       ok(all(w.evaluate("(()=>{const TT=%s;return ['en','fr','af']"%TJS+".map(l=>!!(TT[l].phTake&&TT[l].phPick))})()")),'photo buttons translated EN/FR/AF')
+       ok(all(w.evaluate("(()=>{const TT=%s;return ['en','fr','af','ar']"%TJS+".map(l=>!!(TT[l].phTake&&TT[l].phPick))})()")),'photo buttons translated EN/FR/AF/AR')
        import base64;png=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC')
        for cls,src in (('phGal','phone'),('phCam','camera')):
            w.evaluate("TMC.lastPhoto=null");w.set_input_files('#exPh .%s input'%cls,files=[{'name':'p.png','mimeType':'image/png','buffer':png}]);w.wait_for_function("!!TMC.lastPhoto",timeout=5000)
@@ -734,14 +743,17 @@ try:
       ok(w.locator('nav [data-tab=reports]').count()==1 and w.locator('#view .tile[data-tab=reports]').count()==1,'Admin: 📊 Reports in bottom tabs AND as a Home tile (one list)')
       ok(w.inner_text('nav [data-tab=reports] .ticon').strip()=='📊','Reports tab icon 📊')
       for vw in (360,390):
-       for lg in ('en','fr','af'):
+       for lg in ('en','fr','af','ar'):
         w.set_viewport_size({'width':vw,'height':800});w.select_option('#hLang',lg);w.click('nav [data-tab=home]');w.wait_for_timeout(200)
-        nv=w.evaluate("""(()=>{const bs=[...document.querySelectorAll('nav.tabs button')];return {n:bs.length,fit:bs.every(b=>{const r=b.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&b.scrollWidth<=b.clientWidth+1&&[...b.querySelectorAll('.tlab')].every(l=>l.getBoundingClientRect().right<=r.right+1&&l.getBoundingClientRect().left>=r.left-1)}),h:Math.min(...bs.map(b=>b.getBoundingClientRect().height)),scroll:document.documentElement.scrollWidth<=innerWidth+1}})()""")
+        if w.evaluate("typeof TMC.fitTabs==='function'"):w.evaluate("TMC.fitTabs()")
+        nv=w.evaluate("""(()=>{const bs=[...document.querySelectorAll('nav.tabs button')];const labs=[...document.querySelectorAll('nav.tabs .tlab')].map(l=>{const cs=getComputedStyle(l),r=l.getBoundingClientRect();return {t:l.textContent.trim(),ws:cs.whiteSpace,wrap:l.scrollHeight>r.height+2||(cs.whiteSpace!=='nowrap'&&l.clientHeight>parseFloat(cs.lineHeight)*1.6+2),cut:(()=>{const hadEll=getComputedStyle(l).textOverflow==='ellipsis';const p=l.style.textOverflow;l.style.textOverflow='clip';const c=hadEll||l.scrollWidth>l.clientWidth+1;l.style.textOverflow=p;return c;})(),fs:cs.fontSize};});return {n:bs.length,fit:bs.every(b=>{const r=b.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&b.scrollWidth<=b.clientWidth+1&&[...b.querySelectorAll('.tlab')].every(l=>l.getBoundingClientRect().right<=r.right+1&&l.getBoundingClientRect().left>=r.left-1)}),h:Math.min(...bs.map(b=>b.getBoundingClientRect().height)),scroll:document.documentElement.scrollWidth<=innerWidth+1,labs};})()""")
         if vw==360 and lg=='en':
           w.evaluate("scrollTo(0,0)");shot(w,'home-360-en')
           ov=w.evaluate("(()=>{const h=document.querySelector('header'),c=document.getElementById('hHero');if(!h||!c)return null;const a=h.getBoundingClientRect(),b=c.getBoundingClientRect();return {hb:Math.round(a.bottom),ct:Math.round(b.top),pos:getComputedStyle(h).position}})()")
           ok(ov is None or ov['hb']<=ov['ct']+1,'360px Home: top band does not cover the title card %s'%ov)
-        ok(nv['n']>=5 and nv['fit'] and nv['h']>=56 and nv['scroll'],'%s %dpx: %d bottom tabs fit, labels inside, ≥56px, no sideways scroll %s'%(lg.upper(),vw,nv['n'],nv))
+        ok(nv['n']>=5 and nv['fit'] and nv['h']>=56 and nv['scroll'],'%s %dpx: %d bottom tabs fit, labels inside, ≥56px, no sideways scroll %s'%(lg.upper(),vw,nv['n'],{k:nv[k] for k in nv if k!='labs'}))
+        ok(nv['labs'] and all(x['ws']=='nowrap' and not x['wrap'] for x in nv['labs']),'%s %dpx: tab labels never wrap (white-space:nowrap, one line) %s'%(lg.upper(),vw,nv['labs']))
+        ok(all(not x['cut'] for x in nv['labs']),'%s %dpx: tab labels fully visible on one line (no ellipsis) %s'%(lg.upper(),vw,nv['labs']))
       w.set_viewport_size({'width':390,'height':844});w.select_option('#hLang','en');w.wait_for_timeout(200)
       if os.path.realpath(APP)==os.path.realpath(BASE):w.screenshot(path='/workspace/base-home-reports.png')
       XR=w.evaluate("TMC.REPORTS.some(r=>r.id==='demo')")  # base demo 'x' notes report present?
@@ -756,7 +768,7 @@ try:
           w.set_viewport_size({'width':390,'height':844});w.evaluate("TMC.rp().id=null");w.click('nav [data-tab=home]');w.wait_for_timeout(200)
         w.evaluate("""(()=>{const d=new Date(),p=n=>String(n).padStart(2,'0'),td=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
           window._trows=[{date:td,by:'Rep Tester',n:2,ch:6},{date:'2020-01-15',by:'Rep Tester',n:1,ch:7}];
-          TMC.addReport({id:'demo',title:{en:'Test report',fr:'Rapport test',af:'Toets verslag'},cols:[{key:'date',label:{en:'Date',fr:'Date',af:'Datum'}},{key:'by',label:{en:'Person',fr:'Personne',af:'Persoon'}},{key:'n',label:{en:'Notes',fr:'Notes',af:'Notas'},num:true,sum:true},{key:'ch',label:{en:'Letters',fr:'Lettres',af:'Letters'},num:true,sum:true}],
+          TMC.addReport({id:'demo',title:{en:'Test report',fr:'Rapport test',af:'Toets verslag',ar:'تقرير تجريبي'},cols:[{key:'date',label:{en:'Date',fr:'Date',af:'Datum',ar:'التاريخ'}},{key:'by',label:{en:'Person',fr:'Personne',af:'Persoon',ar:'الشخص'}},{key:'n',label:{en:'Notes',fr:'Notes',af:'Notas',ar:'الملاحظات'},num:true,sum:true},{key:'ch',label:{en:'Letters',fr:'Lettres',af:'Letters',ar:'الحروف'},num:true,sum:true}],
             rows:(f,to)=>window._trows.filter(r=>r.date>=f&&r.date<=to)})})()""")
         XR=TR=True
       if XR and not TR:w.evaluate("TMC.put('x','rpA',{id:'rpA',text:'abcd',by:'Rep Tester',at:new Date().toISOString()});TMC.put('x','rpB',{id:'rpB',text:'xy',by:'Rep Tester',at:new Date().toISOString()});TMC.put('x','rpOld',{id:'rpOld',text:'old one',by:'Rep Tester',at:'2020-01-15T10:00:00Z'})")
@@ -811,10 +823,10 @@ try:
         cv=open(os.path.join(od,'tmc_rep_test.csv'),encoding='utf-8',errors='replace').read().strip().splitlines() if os.path.exists(os.path.join(od,'tmc_rep_test.csv')) else []
         ok(cv and cv[-1].split(',')[SC-1]==g['tot'][SC-1],'LibreOffice opens it and SUM = screen total %s'%(cv[-1] if cv else None))
       for vw in (360,390):
-       for lg in ('en','fr','af'):
+       for lg in ('en','fr','af','ar'):
         w.set_viewport_size({'width':vw,'height':800});w.select_option('#hLang',lg);w.wait_for_timeout(200)
         r=w.evaluate("({dir:document.documentElement.dir,scroll:document.documentElement.scrollWidth<=innerWidth+1,tw:document.querySelector('#rpOut .rep').getBoundingClientRect().right<=innerWidth+1&&document.querySelector('#rpOut .rep').getBoundingClientRect().left>=-1,x:document.getElementById('rpXls').textContent,th:document.querySelector('#rpOut .rep th').textContent})")
-        ok(r['scroll'] and r['tw'] and r['dir']=='ltr' and r['x']==w.evaluate("TMC.T[%r].rpXls"%lg) and r['th']==w.evaluate("(d=>{const l=d.cols[0].label;return typeof l==='string'?TMC.T[%r][l]||l:l[%r]})((TMC.REPORTS.length===1?TMC.REPORTS[0]:TMC.REPORTS.find(r=>r.id===TMC.rp().id)))"%(lg,lg)),'%s %dpx: report translated, %s, table fits, no sideways scroll'%(lg.upper(),vw,r['dir']))
+        ok(r['scroll'] and r['tw'] and r['dir']==('rtl' if lg=='ar' else 'ltr') and r['x']==w.evaluate("TMC.T[%r].rpXls"%lg) and r['th']==w.evaluate("(d=>{const l=d.cols[0].label;return typeof l==='string'?TMC.T[%r][l]||l:l[%r]})((TMC.REPORTS.length===1?TMC.REPORTS[0]:TMC.REPORTS.find(r=>r.id===TMC.rp().id)))"%(lg,lg)),'%s %dpx: report translated, %s, table fits, no sideways scroll'%(lg.upper(),vw,r['dir']))
       w.set_viewport_size({'width':390,'height':844});w.select_option('#hLang','en');w.wait_for_timeout(200)
       if os.path.realpath(APP)==os.path.realpath(BASE):w.screenshot(path='/workspace/base-report-standard.png',full_page=True)
       w.click('#rpBack');w.wait_for_timeout(200)
@@ -828,6 +840,7 @@ try:
      n.wait_for_selector('#ncW',state='visible',timeout=8000);ok('Not connected' in n.inner_text('#ncW'),'script unreachable → red "Not connected" banner with retry');shot(n,'not-connected-en')
      n.select_option('#langSel','fr');n.wait_for_timeout(300);n.evaluate("TMC.api({action:'status',name:'x'}).catch(()=>{})");n.wait_for_timeout(500);ok('Pas connecté' in n.inner_text('#ncW'),'banner in French')
      n.select_option('#langSel','af');n.evaluate("TMC.api({action:'status',name:'x'}).catch(()=>{})");n.wait_for_timeout(500);ok('Nie gekoppel nie' in n.inner_text('#ncW'),'banner in Afrikaans');shot(n,'not-connected-af')
+     n.select_option('#langSel','ar');n.evaluate("TMC.api({action:'status',name:'x'}).catch(()=>{})");n.wait_for_timeout(500);ok('غير متصل' in n.inner_text('#ncW') or 'لا' in n.inner_text('#ncW'),'banner in Arabic');shot(n,'not-connected-ar')
      x.unroute('**/exec');n.click('#ncB');n.wait_for_timeout(1200);ok(not n.is_visible('#ncW'),'retry after the script is back → banner gone')
      x.close()
      ERR[:]=[e for e in ERR if not e.startswith('nc:')]   # aborted requests in test 14 are expected
@@ -992,7 +1005,7 @@ try:
      ok(fa.inner_text('#tmcToast')==fa.evaluate("TMC.t('fixRef')") and 'not saved' in fa.inner_text('#tmcToast'),'B7: server refuses → plain message: %s'%fa.inner_text('#tmcToast'))
      fa.unroute('**/exec');fa.wait_for_function("(TMC.all('x').find(r=>r.id==='fb7')||{}).text==='b7 start'",timeout=12000)
      ok(xr(P6,'fb7').get('text')=='b7 start' and fa.evaluate("TMC.pending()")==0,'B7: local change reverted to the server copy')
-     ok(all(fa.evaluate("TMC.T[%r].fixRef"%l) for l in ('en','fr','af')) and len({fa.evaluate("TMC.T[%r].fixRef"%l) for l in ('en','fr','af')})==3,'B7: message in EN / FR / AF')
+     ok(all(fa.evaluate("TMC.T[%r].fixRef"%l) for l in ('en','fr','af','ar')) and len({fa.evaluate("TMC.T[%r].fixRef"%l) for l in ('en','fr','af','ar')})==4,'B7: message in EN / FR / AF / AR')
      # B6: code-only phone (Admin login refused → no token) keeps syncing by code, no ✏️
      fa.route('**/exec',lambda rt:rt.fulfill(status=200,content_type='application/json',body='{"ok":false,"error":"bad_pin"}') if json.loads(rt.request.post_data or '{}').get('action')=='login' else rt.continue_())
      fa.evaluate("TMC.L.del('tok')");fa.evaluate("TMC.syncNow()");fa.wait_for_timeout(1500)

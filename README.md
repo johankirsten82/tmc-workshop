@@ -29,7 +29,7 @@ This is the shared starting point for TMC phone apps (Purshes, GRV, Food Invento
 - **Inputs**: PIN inputs have no `type=password`. They use the `msk` class, so phones do not offer to save a password.
 - **Logout** warns when changes are not sent yet.
 - **Layout**: Home has big buttons, plus a bottom tab bar with Home / Work / Users (Admin only) / Settings.
-- **Languages**: EN / FR / AF (Afrikaans). Left-to-right only. A phone that had Arabic ("ar") saved opens in English.
+- **Languages**: EN / FR / AR / AF (Afrikaans). Arabic uses a full right-to-left layout. Dates use `ar-TD-u-nu-latn` (Latin digits). A phone that had Arabic ("ar") saved stays in Arabic. Never remove a language.
 - **Google Sheet sync**:
   - Changes are sent 800 ms after a change.
   - It retries when the phone is back online.

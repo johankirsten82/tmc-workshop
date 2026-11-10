@@ -1,3 +1,5 @@
+> Workshop v4 sample (10 Nov 2026): Arabic is restored alongside English, French and Afrikaans. Never remove a language. This file remains historical and is not a task to remove Arabic.
+
 > PAUSED / NOT AUTHORIZED for Workshop work. Historical reference only; do not execute this migration. See WORKSHOP_REFERENCE_READ_FIRST.md.
 
 # Arabic out, Afrikaans in — steps for each app bot
