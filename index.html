@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en" dir="ltr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- =====================================================================
+  TMC BASE APP — CONFIG. Change ONLY this block for a new app, then run:
+      python3 tools/apply_config.py
+  (it writes manifest.json, sw.js cache/version, icons and the QR code).
+  APP_ID: short, lowercase, unique per app (e.g. "purshes", "grv", "food").
+          Every storage key, cache, manifest id and SW is namespaced by it,
+          so apps on the same site / same phone never share data.
+  CACHE_PREFIX (optional): cache name start, lowercase letters/digits and
+          single hyphens (e.g. "tmc-fuel" gives caches "tmc-fuel-v1").
+          Defaults to APP_ID. Storage keys always use APP_ID (no hyphens).
+  SYNC_URL: this app's own Google Apps Script /exec link. Put it HERE so a
+          fresh install is connected at once (the link is public, that's fine).
+  SYNC_CODE: leave EMPTY (VER 4+). Phones then sign in with name + PIN and
+          get a session token from the script. A code is only for old apps;
+          it can also arrive by a join link  .../#k=CODE  (saved, then wiped
+          from the address bar). Never put a real code in a public repo.
+  ADMIN_ALIASES: name keys (lowercase, no spaces/dots) that mean the Admin.
+====================================================================== -->
+<script id="cfg">window.CONFIG=/*CONFIG*/{
+  "APP_ID": "tmcworkshop",
+  "CACHE_PREFIX": "tmcworkshop",
+  "NAME": "TMC Workshop",
+  "SHORT": "TMC Workshop",
+  "VER": 1,
+  "COLOR": "#b45309",
+  "COLOR_DARK": "#7c2d12",
+  "REPORT_COLOR": "#1B7F3B",
+  "BG": "#f1f5f9",
+  "SYNC_URL": "",
+  "SYNC_CODE": "",
+  "SHARE_URL": "",
+  "ADMIN_NAME": "JA Kirsten",
+  "ADMIN_ALIASES": ["jakirsten","johankirsten","johanakirsten","jkirsten","templateadmin","templateadmintwo","templateadminthree","templateadminfour"],
+  "PERMS": [
+    {"id":"view","icon":"👁️","en":"View","fr":"Voir","af":"Kyk"},
+    {"id":"add","icon":"➕","en":"Add","fr":"Ajouter","af":"Voeg by"},
+    {"id":"reports","icon":"📊","en":"Reports","fr":"Rapports","af":"Verslae"},
+    {"id":"export","icon":"📤","en":"Export","fr":"Exporter","af":"Stuur uit"}
+  ],
+  "PERM_DEFAULT": ["view","add"],
+  "PERM_KINDS": {"x":{"view":"view","add":"add"},"j":{"view":"view","add":"add"},"m":{"view":"view","add":"add"},"p":{"view":"view","add":"add"},"k":{"view":"view","add":"add"},"si":{"view":"view","add":"add"},"hj":{"view":"view","add":"add"},"sb":{"view":"view","add":"add"}}
+}/*END*/;</script>
+<title>TMC Workshop</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#b45309">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<style>
+/* TMC look = Purchases look (pa-v85). Colour comes from CONFIG COLOR (--c/--cd). Rule 1: every button/field >= 56px. */
+:root{--c:#0f766e;--cd:#115e59;--bg:#f1f5f9}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:#0f172a;font-size:17px;min-height:100vh;padding-bottom:80px}
+input,select,textarea,button{font:inherit;font-size:18px;min-height:58px;width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px;margin:6px 0;background:#fff;color:#0f172a}
+textarea{min-height:80px}
+button{background:var(--c);color:#fff;border:0;font-weight:600;cursor:pointer;touch-action:manipulation}
+button.sec{background:#e2e8f0;color:#0f172a}button.red{background:#b91c1c}button.sm{width:auto;padding:8px 14px;margin:4px}
+label{display:block;font-size:14px;color:#475569;margin:8px 0 4px}
+.msk:not(.shw){-webkit-text-security:disc}
+.pw{position:relative}.pw .eye{position:absolute;inset-inline-end:4px;top:6px;width:auto;padding:4px 12px;background:transparent;color:#334155;font-size:22px;margin:0;border:0}
+.full{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(var(--c),var(--cd))}
+.signin{position:relative;width:100%;max-width:440px}.signin>.card{margin:0}
+.signin>.ncBox{position:absolute;top:100%;left:0;right:0;margin:16px 0 0}
+.card{background:#fff;border-radius:14px;padding:14px;width:100%;max-width:440px;box-shadow:0 1px 3px #0002;text-align:center;margin-bottom:12px}
+.card h2{margin:6px 0 4px;font-size:22px}.logo{width:84px;height:84px;border-radius:14px}
+.err{color:#b91c1c;font-weight:700;display:none;margin:6px 0}.hint{color:#475569;font-size:15px}
+.langs select{text-align:center}
+header{position:sticky;top:0;z-index:5;background:var(--c);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px}
+header img{width:36px;height:36px;border-radius:8px}header .t{flex:1;min-width:0;font-weight:700;font-size:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}header .u{font-size:15px;opacity:.9}
+header{min-height:56px;flex-wrap:nowrap}header .hS{display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap}header .dot{border:2px solid #fff}
+header .hLang{width:auto;min-height:56px;min-width:64px;margin:0;padding:0 8px;border:2px solid #fff;border-radius:12px;background:transparent;color:#fff;font-size:17px;font-weight:700}header .hLang option{color:#0f172a}
+@media (max-width:380px){header{gap:6px;padding:8px 10px}header img{width:30px;height:30px}header .t{font-size:17px}}
+.dot{width:14px;height:14px;border-radius:50%;background:#94a3b8;display:inline-block}.dot.ok{background:#22c55e}.dot.err{background:#ef4444}.dot.busy{background:#f59e0b}
+main{padding:12px 12px 110px;max-width:600px;margin:0 auto}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #cbd5e1;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;margin:0;border-radius:0;background:#fff;color:#475569;min-height:64px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;padding:0 2px}
+nav.tabs button .ticon{font-size:24px}nav.tabs button.on{color:var(--c);border-top:3px solid var(--c);background:#f0fdfa}
+.badge{position:absolute;top:4px;inset-inline-end:18%;background:#dc2626;color:#fff;border-radius:9px;padding:0 5px;font-size:12px;line-height:18px;font-weight:700}
+.hhero{display:flex;align-items:center;gap:14px}.hhero img{border-radius:14px;flex:none}.hhero h2{margin:0;font-size:21px}#hDate{color:#475569;margin-top:2px}.hhi{font-size:18px;font-weight:700;color:#0f766e;margin-top:2px}
+.loBand{width:100%;min-height:56px;margin:0 0 10px;font-size:18px;font-weight:700}
+#sOut.loBand{margin:6px 0}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:150px;margin:0;padding:12px 6px;background:#fff;color:#0f172a;border:2px solid #bbf7d0;border-radius:16px;box-shadow:0 2px 8px #0000000f;font-size:17px;font-weight:700}
+.tile.sec{background:#fff}.tile:active{background:#f0fdf4}.tile b{font-size:40px;line-height:1}
+.phView{display:block;width:100%;min-height:60px;font-size:19px;font-weight:700;margin:6px 0}.phOv{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;gap:10px}.phOv img{max-width:100%;max-height:80vh;object-fit:contain;background:#fff}.phOv .phMsg{color:#fff;font-size:20px;text-align:center}.phOv button{min-height:60px;font-size:20px;width:100%;max-width:420px}
+.phPick{display:flex;gap:8px}.phPick label{flex:1;min-height:64px;display:flex;align-items:center;justify-content:center;text-align:center;background:var(--c);color:#fff;border-radius:10px;font-weight:700;font-size:17px;padding:6px;margin:6px 0;cursor:pointer}.phPick label.alt{background:#fff;color:var(--c);border:2px solid var(--c)}.phPick input{display:none}.phPrev{max-width:100%;border-radius:10px;margin-top:6px}
+.rep{width:100%;border-collapse:collapse;font-size:17px;margin:6px 0}.rep th{background:var(--rc);color:#fff;text-align:left;padding:12px 10px}.rep td{padding:12px 10px;border-bottom:1px solid #d1e7d8}.rep tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--rc) 10%,#fff)}.rep tfoot td{background:color-mix(in srgb,var(--rc) 22%,#fff);color:var(--rc);font-weight:800;border-top:3px solid var(--rc)}.repH{background:var(--rc);color:#fff;border-radius:10px;padding:12px;font-weight:800;font-size:19px;margin:6px 0}
+nav.tabs .tlab{font-size:13px;line-height:1.1;text-align:center;overflow-wrap:anywhere;max-width:100%}
+.rpBar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.rpBar button{margin:0;padding:6px 4px;font-size:16px}.rpBar button.on{background:var(--rc);color:#fff}
+.rpDates{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.rpDates>div{min-width:0}.rpDates input{width:100%;min-width:0;max-width:100%;box-sizing:border-box}.rpDates label{margin:4px 0 0}
+.rpAct{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rpAct button{margin:0}.rpAct .rpBk{grid-column:1/-1}
+.rpXls{background:var(--rc)}.rpList button{text-align:start}
+#rpOut .rep{table-layout:fixed;font-size:15px}#rpOut .rep th,#rpOut .rep td{padding:10px 6px;overflow-wrap:anywhere}.rep th{text-align:start}.rep .nm{text-align:end}
+@media print{header,nav.tabs,.bar,.noPr,button{display:none!important}body{background:#fff;padding:0}.box{box-shadow:none}#rpOut .rep th,#rpOut .rep tfoot td,#rpOut .rep tbody tr:nth-child(even) td,.repH{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+.box{background:#fff;border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 1px 3px #0002}
+.ph{border:4px dashed #f59e0b;background:#fffbeb;text-align:center}
+.bar{display:none;margin:0 0 12px;padding:12px;border-radius:14px;font-weight:700}
+.pendW{background:#fef3c7;border:1px solid #f59e0b;color:#78350f}.updW{background:#fef3c7;border:1px solid #f59e0b;color:#78350f}.updW button{background:#b45309}
+.bar small{display:block;font-weight:500;margin-top:4px}
+.urow{display:flex;flex-wrap:wrap;align-items:center;gap:4px;border-bottom:1px solid #e2e8f0;padding:8px 0}.urow .n{flex:1;min-width:140px;font-weight:700}
+.st{font-size:14px;border-radius:99px;padding:2px 8px;background:#e2e8f0}.st.pending{background:#fef3c7}.st.blocked,.st.rejected{background:#fee2e2}.st.active{background:#dcfce7}
+.insB{background:#16a34a;font-size:20px;min-height:64px}.insH{background:#f1f5f9;border-radius:10px;padding:10px;font-weight:600;margin:6px 0}
+.permBox{width:100%;margin:8px 0;border:2px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff}.permBox .hint{padding:8px 12px;margin:0}
+.permT{display:flex;align-items:center;gap:12px;min-height:60px;border-top:1px solid #e2e8f0;padding:6px 14px;font-size:19px;font-weight:700;background:#fff;cursor:pointer}
+.permT span{flex:1}.permT.on{background:#ecfdf5}.permT input{width:32px;height:32px;min-height:32px;margin:0;flex:none;accent-color:var(--c)}
+.permT.lock{color:#94a3b8;background:#f8fafc;cursor:default}.permT.lock small{font-size:14px;font-weight:600}
+.uli{display:flex;align-items:center;gap:10px;width:100%;min-height:64px;background:#fff;color:#0f172a;border:0;border-bottom:1px solid #e2e8f0;border-radius:0;padding:8px 4px;text-align:start;font-size:19px;font-weight:700;box-shadow:none}
+.uli .ui{font-size:26px}.uli .ut{flex:1;min-width:0}.uli small{display:block;font-size:14px;font-weight:600;color:#475569}.uli .ch{font-size:26px;color:#94a3b8}
+.uopen{padding:6px 0 12px;border-bottom:1px solid #e2e8f0}.uopen .acts{display:flex;flex-wrap:wrap;gap:6px}
+.canR{display:flex;align-items:center;gap:12px;min-height:58px;font-size:20px;font-weight:700;border-bottom:1px solid #e2e8f0}.canR.no{color:#94a3b8}.canR .ci{font-size:26px}
+.fixB{width:auto;min-width:120px;min-height:56px;background:#b45309;font-size:18px}.fixN{width:100%}
+.dsc h2{color:#b91c1c}.dsc button{min-height:60px;font-size:20px}
+#updGo{position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:18px}#updGo img{width:96px;height:96px;border-radius:20px}#updGo b{font-size:30px;line-height:1.25;color:#0f172a}#updGo span{font-size:20px;color:#475569}#updGo i{width:64px;height:64px;border:7px solid #e2e8f0;border-top-color:#0f766e;border-radius:50%;animation:updSp 1s linear infinite}@keyframes updSp{to{transform:rotate(360deg)}}
+.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.ncW{background:#fee2e2;border:1px solid #dc2626;color:#7f1d1d}
+.qr{width:240px;height:240px;max-width:80vw;max-height:80vw;background:#fff}
+
+/*TMC-SIGNIN v1 — shared sign-in block. Copy as-is. Only --tmcS-c/--tmcS-cd (colour), the logo and the app name may differ.*/
+.tmcS{position:fixed!important;inset:0!important;z-index:9000!important;overflow:auto!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;margin:0!important;min-height:0!important;background:linear-gradient(var(--tmcS-c,#0f766e),var(--tmcS-cd,#115e59))!important;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;box-sizing:border-box!important}
+.tmcS *{box-sizing:border-box!important;font-family:inherit!important;letter-spacing:normal!important}
+.tmcS .signin{position:relative!important;width:100%!important;max-width:380px!important;margin:0!important;padding:0!important}
+.tmcS .signin>.card{display:block!important;background:#fff!important;border-radius:14px!important;padding:16px!important;margin:0!important;width:100%!important;max-width:none!important;box-shadow:0 1px 3px #0002!important;text-align:center!important;border:0!important}
+.tmcS .tmcS-logo{display:block!important;width:84px!important;height:84px!important;margin:0 auto!important;border-radius:14px!important;padding:0!important}
+.tmcS .tmcS-t{display:block!important;margin:10px 0 12px!important;padding:0!important;font-size:22px!important;line-height:28px!important;height:28px!important;font-weight:700!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;color:#0f172a!important}
+.tmcS .tmcS-lang,.tmcS .tmcS-name{display:block!important;width:100%!important;height:58px!important;min-height:58px!important;max-height:58px!important;margin:0 0 12px!important;padding:0 14px!important;font-size:18px!important;line-height:normal!important;border:1px solid #cbd5e1!important;border-radius:12px!important;color:#0f172a!important;box-shadow:none!important;outline-offset:0}
+.tmcS .tmcS-lang{background:#eef2f6!important;text-align:center!important;text-align-last:center!important}
+.tmcS .tmcS-name{background:#fff!important;text-align:start!important}
+.tmcS .tmcS-err{color:#b91c1c!important;font-weight:700!important;margin:0 0 8px!important;font-size:16px!important}
+.tmcS .tmcS-go{display:block!important;width:100%!important;height:58px!important;min-height:58px!important;margin:0!important;padding:0 14px!important;font-size:19px!important;font-weight:700!important;border:0!important;border-radius:12px!important;background:var(--tmcS-c,#0f766e)!important;color:#fff!important;box-shadow:none!important}
+.tmcS .ncBox{position:absolute!important;top:100%!important;left:0!important;right:0!important;bottom:auto!important;width:auto!important;margin:16px 0 0!important;padding:14px!important;background:#fee2e2!important;border:1px solid #dc2626!important;border-radius:14px!important;color:#7f1d1d!important;font-size:15px!important;line-height:20px!important;font-weight:500!important;text-align:start!important;box-shadow:none!important;z-index:auto!important}
+.tmcS .ncBox:not([style*="none"]){display:flex!important;flex-direction:column!important;gap:0!important}
+.tmcS .ncBox>*,.tmcS .ncBox>div>*{display:block!important;margin:0!important;padding:0!important;font-size:15px!important;line-height:20px!important;flex:none!important;width:auto!important}
+.tmcS .ncBox b{font-size:17px!important;line-height:22px!important;font-weight:700!important;margin:0 0 4px!important}
+.tmcS .ncBox button{width:100%!important;height:58px!important;min-height:58px!important;margin:12px 0 0!important;padding:0 14px!important;font-size:18px!important;line-height:normal!important;font-weight:700!important;border:0!important;border-radius:12px!important;background:#dc2626!important;color:#fff!important}
+/*END TMC-SIGNIN*/
+.navBack{display:block!important;width:100%!important;min-height:58px!important;margin:6px 0 12px!important;padding:10px!important;font-size:18px!important;font-weight:700!important;text-align:center!important;background:#e5e7eb!important;color:#1f2937!important;border:0!important;border-radius:10px!important;box-shadow:none!important}@media print{.navBack{display:none!important}}.navAsk .card h2{font-size:24px}.navAsk .card button{min-height:60px;font-size:22px}
+html{scroll-padding-bottom:96px}
+#wjMat h2{margin:0 0 4px}
+#wjMat label{margin:2px 0}
+#wjMat textarea{min-height:58px}
+#wjSaveM,#wjSave,#wjSavePh{scroll-margin-bottom:96px}
+</style></head><body>
+<div id="app"></div>
+<script>
+"use strict";
+(function(){
+const C=window.CONFIG,P=C.APP_ID+"_";            // every localStorage key starts with APP_ID_
+const CACHE_PREFIX=(C.CACHE_PREFIX||C.APP_ID)+"-v"; // every cache name starts with CACHE_PREFIX-v (default APP_ID)
+document.documentElement.style.setProperty("--c",C.COLOR);document.documentElement.style.setProperty("--cd",C.COLOR_DARK);document.documentElement.style.setProperty("--bg",C.BG);document.documentElement.style.setProperty("--rc",C.REPORT_COLOR||"#1B7F3B");
+const L={get:k=>localStorage.getItem(P+k),set:(k,v)=>localStorage.setItem(P+k,v),del:k=>localStorage.removeItem(P+k),
+  j:(k,d)=>{try{const v=localStorage.getItem(P+k);return v==null?d:JSON.parse(v)}catch(e){return d}},sj:(k,v)=>localStorage.setItem(P+k,JSON.stringify(v))};
+window.TMC={P:P,L:L};
+/* optional join link: .../#k=CODE → saved for this app only, then wiped from the address bar */
+(function(){const m=/(?:^#|&)k=([^&]+)/.exec(location.hash||"");if(!m)return;try{L.set("sycode",decodeURIComponent(m[1]).trim())}catch(e){}
+  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){location.hash=""}})();
+
+/* ---------------- Texts EN / FR / AF (Afrikaans). No Arabic, no right-to-left. ---------------- */
+const T={en:{
+hello:"Hi",reports:"Reports",rpPick:"Choose a report",rpToday:"Today",rpMonth:"This month",rpDates:"Pick dates",rpFrom:"From",rpTo:"To",rpShow:"Show",rpXls:"📥 Download Excel",rpPrint:"🖨️ Print",rpBack:"⬅ Back",rpNone:"No data for these dates.",rpPeriod:"Period",rpDemo:"Notes per person",rpDate:"Date",rpPerson:"Person",rpNotes:"Notes",rpChars:"Letters",phTake:"📷 Take photo",phPick:"🖼️ Choose from phone",phDemo:"Photo (demo)",rpTot:"Total",rpItem:"Item",rpQty:"Count",name:"Your name",nameH:"Type your name",go:"Continue",needName:"Please type your name.",
+pinT:"Enter your PIN",pin:"PIN",pinWrong:"Wrong PIN. Try again.",pinLock:"Too many wrong PINs. Try again in %m min.",other:"Use a different name",
+setT:"Choose a PIN",setH:"4 to 6 numbers. You will use it every time.",pin2:"Type the PIN again",pinBad:"Use 4 to 6 numbers.",pinDiff:"The two PINs are not the same.",save:"Save",
+setupT:"First Admin setup",setupH:"You are the first user. Choose the Admin PIN.",
+waitT:"Waiting for approval",waitH:"%n, the Admin must approve you. Ask the Admin, then tap Check again.",check:"🔄 Check again",
+rejT:"Not approved",rejH:"The Admin did not approve this name. Ask the Admin.",blkT:"Blocked",blkH:"This name is blocked. Ask the Admin.",
+netT:"Internet needed",netH:"Connect to the internet once so the app can load the users.",retry:"🔄 Try again",loading:"Loading…",
+home:"Home",work:"Work",users:"Users",settings:"Settings",share:"Share app",syncNow:"🔄 Sync now",
+phT:"🧩 APP FEATURES GO HERE",phH:"This tab is a placeholder. Each app puts its own screens here.",exT:"Example note (demo)",exAdd:"Save note",fix:"✏️ Fix",fixT:"✏️ Fix a mistake (Admin)",fixSave:"💾 Save fix",fixOnly:"Only the Admin can fix a saved record.",fixRef:"⚠️ Your fix was not saved. Only the Admin can fix. Sign in as the Admin and try again.",fixed:"fixed by",can:"What I can do",canH:"Ticked = allowed. Ask the Admin to change it.",canEd:"✅ Allowed for",dupT:"Already asked - wait for Admin",dupH:"This name already asked once. Wait for the Admin. If you were approved, type your name and PIN to sign in.",canAdm:"⭐ Admin only: ✏️ Fix, 👥 Approve users",lkFix:"✏️ Fix",lkApp:"👥 Approve users",admOnly:"Admin only",canAll:"⭐ Admin: you can do everything.",noAccess:"You are not allowed to do this.",repT:"📊 Report",expT:"📤 Export",exNone:"No notes yet.",
+synced:"Synced",syncErr:"Sync problem",syncOff:"Not connected yet",offline:"Offline",last:"Last sync",
+pwT:"⚠️ %n change(s) not sent to the Sheet yet",pwOff:"No internet — they will be sent when you are online.",pwDel:"Tap 🔄 Sync now before deleting the app or clearing data, or these changes will be lost.",
+updT:"🆕 A new version is ready",updB:"⬆️ Update now",updChk:"Check for update",updNone:"You have the latest version.",updGo:"Updating… please wait",updGo2:"Do not close the app. Your saved work is kept.",ver:"Version",
+insBtn:"📲 Install app",insIos:"Tap Share ⬆️ then Add to Home Screen ➕",
+shareH:"Scan this code with the other phone, or send the link.",shareB:"📤 Send link",copy:"📋 Copy link",copied:"Copied",close:"Close",
+pend:"Waiting",act:"Approved",rej:"Rejected",blk:"Blocked",approve:"✅ Approve",reject:"❌ Reject",block:"⛔ Block",unblock:"↩️ Unblock",resetPin:"🔑 Reset PIN",admin:"Admin",noPend:"No one is waiting.",dscBT:"⛔ Block and remove %n?",dscRT:"❌ Reject and remove %n?",dscH:"%n is taken off the list. Their old PIN stops working. They can send a new request later.",dscY:"🗑️ Yes, remove",dscN:"↩️ Back",dscOld:"🗑️ Remove",dscDone:"%n was removed.",dscSelf:"You cannot remove yourself.",dscLast:"You cannot remove the last Admin.",dscMain:"The main Admin can never be removed, blocked, demoted or renamed.",dscTok:"Sign in again with your PIN to remove people.",goneT:"Not approved",goneH:"The Admin removed this request. You can send a new one.",again:"📨 Send a new request",
+lang:"Language",sync:"Sync",syncUrl:"Sync link",syncCode:"Sync code",sv:"Saved",logout:"🚪 Log out",logoutQ:"Log out %n?",
+logoutPend:"⚠️ %n change(s) are not sent yet. They stay on this phone and will be sent later. Log out anyway?",
+wipe:"🗑️ Clear this app on this phone",wipeQ:"Delete this app's data on this phone? Other apps are not touched.",wipePend:"⚠️ %n change(s) are NOT sent and will be LOST. Delete anyway?",
+draft:"Your unsaved text was kept.",ncT:"🔴 Not connected yet",ncH:"The app cannot reach the Sheet. Your work is kept on this phone and sent when it connects.",ncOff:"Not connected yet. No Sheet link in this app yet. Your work stays on this phone."},
+fr:{
+hello:"Bonjour",reports:"Rapports",rpPick:"Choisir un rapport",rpToday:"Aujourd'hui",rpMonth:"Ce mois",rpDates:"Choisir les dates",rpFrom:"Du",rpTo:"Au",rpShow:"Afficher",rpXls:"📥 Télécharger Excel",rpPrint:"🖨️ Imprimer",rpBack:"⬅ Retour",rpNone:"Aucune donnée pour ces dates.",rpPeriod:"Période",rpDemo:"Notes par personne",rpDate:"Date",rpPerson:"Personne",rpNotes:"Notes",rpChars:"Lettres",phTake:"📷 Prendre une photo",phPick:"🖼️ Choisir dans le téléphone",phDemo:"Photo (démo)",rpTot:"Total",rpItem:"Élément",rpQty:"Nombre",name:"Votre nom",nameH:"Écrivez votre nom",go:"Continuer",needName:"Écrivez votre nom.",
+pinT:"Entrez votre PIN",pin:"PIN",pinWrong:"PIN incorrect. Réessayez.",pinLock:"Trop de PIN erronés. Réessayez dans %m min.",other:"Utiliser un autre nom",
+setT:"Choisissez un PIN",setH:"4 à 6 chiffres. Vous l'utiliserez à chaque fois.",pin2:"Retapez le PIN",pinBad:"Utilisez 4 à 6 chiffres.",pinDiff:"Les deux PIN ne sont pas pareils.",save:"Enregistrer",
+setupT:"Configuration de l'Admin",setupH:"Vous êtes le premier utilisateur. Choisissez le PIN Admin.",
+waitT:"En attente d'approbation",waitH:"%n, l'Admin doit vous approuver. Demandez à l'Admin, puis touchez Vérifier.",check:"🔄 Vérifier",
+rejT:"Non approuvé",rejH:"L'Admin n'a pas approuvé ce nom. Demandez à l'Admin.",blkT:"Bloqué",blkH:"Ce nom est bloqué. Demandez à l'Admin.",
+netT:"Internet nécessaire",netH:"Connectez-vous une fois à internet pour charger les utilisateurs.",retry:"🔄 Réessayer",loading:"Chargement…",
+home:"Accueil",work:"Travail",users:"Utilisateurs",settings:"Réglages",share:"Partager l'app",syncNow:"🔄 Synchroniser",
+phT:"🧩 LES FONCTIONS DE L'APP VONT ICI",phH:"Cet onglet est un emplacement. Chaque app y met ses écrans.",exT:"Note d'exemple (démo)",exAdd:"Enregistrer la note",fix:"✏️ Corriger",fixT:"✏️ Corriger une erreur (Admin)",fixSave:"💾 Enregistrer",fixOnly:"Seul l'Admin peut corriger un enregistrement.",fixRef:"⚠️ Votre correction n'est pas enregistrée. Seul l'Admin peut corriger. Connectez-vous comme Admin et réessayez.",fixed:"corrigé par",can:"Mes droits",canH:"Coché = autorisé. Demandez à l'Admin pour changer.",canEd:"✅ Autorisé pour",dupT:"Déjà demandé - attendez l'Admin",dupH:"Ce nom a déjà demandé. Attendez l'Admin. Si vous êtes accepté, tapez votre nom et PIN.",canAdm:"⭐ Admin seulement : ✏️ Corriger, 👥 Approuver",lkFix:"✏️ Corriger",lkApp:"👥 Approuver",admOnly:"Admin seulement",canAll:"⭐ Admin : vous pouvez tout faire.",noAccess:"Vous n'avez pas le droit de faire ceci.",repT:"📊 Rapport",expT:"📤 Exporter",exNone:"Pas encore de notes.",
+synced:"Synchronisé",syncErr:"Problème de synchro",syncOff:"Pas connecté — pas encore",offline:"Hors ligne",last:"Dernière synchro",
+pwT:"⚠️ %n modification(s) pas encore envoyée(s) à la feuille",pwOff:"Pas d'internet — elles seront envoyées dès que vous serez en ligne.",pwDel:"Touchez 🔄 Synchroniser avant de supprimer l'application ou d'effacer les données, sinon ces modifications seront perdues.",
+updT:"🆕 Une nouvelle version est prête",updB:"⬆️ Mettre à jour",updChk:"Chercher une mise à jour",updNone:"Vous avez la dernière version.",updGo:"Mise à jour… veuillez patienter",updGo2:"Ne fermez pas l’app. Votre travail enregistré est gardé.",ver:"Version",
+insBtn:"📲 Installer l'application",insIos:"Touchez Partager ⬆️ puis Sur l'écran d'accueil ➕",
+shareH:"Scannez ce code avec l'autre téléphone, ou envoyez le lien.",shareB:"📤 Envoyer le lien",copy:"📋 Copier le lien",copied:"Copié",close:"Fermer",
+pend:"En attente",act:"Approuvé",rej:"Refusé",blk:"Bloqué",approve:"✅ Approuver",reject:"❌ Refuser",block:"⛔ Bloquer",unblock:"↩️ Débloquer",resetPin:"🔑 Réinitialiser PIN",admin:"Admin",noPend:"Personne n'attend.",dscBT:"⛔ Bloquer et retirer %n ?",dscRT:"❌ Refuser et retirer %n ?",dscH:"%n est retiré de la liste. Son ancien PIN ne marche plus. Il peut envoyer une nouvelle demande plus tard.",dscY:"🗑️ Oui, retirer",dscN:"↩️ Retour",dscOld:"🗑️ Retirer",dscDone:"%n a été retiré.",dscSelf:"Vous ne pouvez pas vous retirer vous-même.",dscLast:"Vous ne pouvez pas retirer le dernier Admin.",dscMain:"L'Admin principal ne peut jamais être retiré, bloqué, rétrogradé ni renommé.",dscTok:"Reconnectez-vous avec votre PIN pour retirer quelqu'un.",goneT:"Non approuvé",goneH:"L'Admin a retiré cette demande. Vous pouvez en envoyer une nouvelle.",again:"📨 Nouvelle demande",
+lang:"Langue",sync:"Synchro",syncUrl:"Lien de synchro",syncCode:"Code de synchro",sv:"Enregistré",logout:"🚪 Se déconnecter",logoutQ:"Déconnecter %n ?",
+logoutPend:"⚠️ %n modification(s) pas encore envoyée(s). Elles restent sur ce téléphone et seront envoyées plus tard. Se déconnecter quand même ?",
+wipe:"🗑️ Effacer cette app sur ce téléphone",wipeQ:"Effacer les données de cette app sur ce téléphone ? Les autres apps ne sont pas touchées.",wipePend:"⚠️ %n modification(s) NON envoyée(s) seront PERDUES. Effacer quand même ?",
+draft:"Votre texte non enregistré a été gardé.",ncT:"🔴 Pas connecté — pas encore",ncH:"L'app n'arrive pas à joindre la feuille. Votre travail reste sur ce téléphone et sera envoyé à la connexion.",ncOff:"Pas connecté — pas encore. Pas de lien Sheet. Le travail reste sur ce téléphone."},
+af:{
+hello:"Hallo",reports:"Verslae",rpPick:"Kies 'n verslag",rpToday:"Vandag",rpMonth:"Hierdie maand",rpDates:"Kies datums",rpFrom:"Van",rpTo:"Tot",rpShow:"Wys",rpXls:"📥 Laai Excel af",rpPrint:"🖨️ Druk",rpBack:"⬅ Terug",rpNone:"Niks vir hierdie datums nie.",rpPeriod:"Tydperk",rpDemo:"Notas per persoon",rpDate:"Datum",rpPerson:"Persoon",rpNotes:"Notas",rpChars:"Letters",phTake:"📷 Neem foto",phPick:"🖼️ Kies van foon",phDemo:"Foto (toets)",rpTot:"Totaal",rpItem:"Item",rpQty:"Aantal",name:"Jou naam",nameH:"Tik jou naam",go:"Gaan aan",needName:"Tik asseblief jou naam.",
+pinT:"Tik jou PIN",pin:"PIN",pinWrong:"Verkeerde PIN. Probeer weer.",pinLock:"Te veel verkeerde PINs. Probeer weer oor %m min.",other:"Gebruik 'n ander naam",
+setT:"Kies 'n PIN",setH:"4 tot 6 syfers. Jy gebruik dit elke keer.",pin2:"Tik die PIN weer",pinBad:"Gebruik 4 tot 6 syfers.",pinDiff:"Die twee PINs is nie dieselfde nie.",save:"Stoor",
+setupT:"Eerste Admin opstel",setupH:"Jy is die eerste gebruiker. Kies die Admin PIN.",
+waitT:"Wag vir die Admin",waitH:"%n, die Admin moet jou eers goedkeur. Vra die Admin, en tik dan Kyk weer.",check:"🔄 Kyk weer",
+rejT:"Nie goedgekeur nie",rejH:"Die Admin het hierdie naam nie goedgekeur nie. Vra die Admin.",blkT:"Geblok",blkH:"Hierdie naam is geblok. Vra die Admin.",
+netT:"Internet nodig",netH:"Gaan een keer op die internet sodat die app die gebruikers kan laai.",retry:"🔄 Probeer weer",loading:"Laai…",
+home:"Tuis",work:"Werk",users:"Mense",settings:"Instel",share:"Deel app",syncNow:"🔄 Sync nou",
+phT:"🧩 DIE APP SE DELE KOM HIER",phH:"Hierdie blad hou net plek. Elke app sit sy eie skerms hier.",exT:"Voorbeeld nota (toets)",exAdd:"Stoor nota",fix:"✏️ Maak reg",fixT:"✏️ Maak 'n fout reg (Admin)",fixSave:"💾 Stoor",fixOnly:"Net die Admin kan iets wat gestoor is regmaak.",fixRef:"⚠️ Jou regmaak is nie gestoor nie. Net die Admin kan iets regmaak. Teken in as die Admin en probeer weer.",fixed:"reggemaak deur",can:"Wat ek mag doen",canH:"Gemerk = mag. Vra die Admin om dit te verander.",canEd:"✅ Mag vir",dupT:"Klaar gevra - wag vir die Admin",dupH:"Hierdie naam het klaar gevra. Wag vir die Admin. As jy goedgekeur is, tik jou naam en PIN om in te gaan.",canAdm:"⭐ Net Admin: ✏️ Maak reg, 👥 Keur mense goed",lkFix:"✏️ Maak reg",lkApp:"👥 Keur mense goed",admOnly:"Net Admin",canAll:"⭐ Admin: jy mag alles doen.",noAccess:"Jy mag dit nie doen nie.",repT:"📊 Verslag",expT:"📤 Stuur uit",exNone:"Nog geen notas nie.",
+synced:"Sync klaar",syncErr:"Sync probleem",syncOff:"Nie gekoppel nie — nog nie",offline:"Geen internet",last:"Laaste sync",
+pwT:"⚠️ %n verandering(e) nog nie na die Sheet gestuur nie",pwOff:"Geen internet nie — dit gaan weg sodra jy weer internet het.",pwDel:"Tik 🔄 Sync nou voor jy die app uitvee of die data skoonmaak, anders gaan hierdie veranderinge verlore.",
+updT:"🆕 'n Nuwe weergawe is gereed",updB:"⬆️ Opdateer nou",updChk:"Kyk vir nuwe weergawe",updNone:"Jy het die nuutste weergawe.",updGo:"Opdateer… wag asseblief",updGo2:"Moenie die app toemaak nie. Jou gestoorde werk bly bewaar.",ver:"Weergawe",
+insBtn:"📲 Installeer app",insIos:"Tik Deel ⬆️ en dan Voeg by tuisskerm ➕",
+shareH:"Skandeer hierdie kode met die ander foon, of stuur die skakel.",shareB:"📤 Stuur skakel",copy:"📋 Kopieer skakel",copied:"Gekopieer",close:"Maak toe",
+pend:"Wag",act:"Goedgekeur",rej:"Afgekeur",blk:"Geblok",approve:"✅ Keur goed",reject:"❌ Keur af",block:"⛔ Blok",unblock:"↩️ Ontblok",resetPin:"🔑 Nuwe PIN",admin:"Admin",noPend:"Niemand wag nie.",dscBT:"⛔ Blok en verwyder %n?",dscRT:"❌ Keur af en verwyder %n?",dscH:"%n word van die lys afgehaal. Hulle ou PIN werk nie meer nie. Hulle kan later weer 'n versoek stuur.",dscY:"🗑️ Ja, verwyder",dscN:"↩️ Terug",dscOld:"🗑️ Verwyder",dscDone:"%n is verwyder.",dscSelf:"Jy kan nie jouself verwyder nie.",dscLast:"Jy kan nie die laaste Admin verwyder nie.",dscMain:"Die hoof-Admin kan nooit verwyder, geblok, afgegradeer of hernoem word nie.",dscTok:"Teken weer in met jou PIN om mense te verwyder.",goneT:"Nie goedgekeur nie",goneH:"Die Admin het hierdie versoek verwyder. Jy kan 'n nuwe een stuur.",again:"📨 Stuur nuwe versoek",
+lang:"Taal",sync:"Sync",syncUrl:"Sync skakel",syncCode:"Sync kode",sv:"Gestoor",logout:"🚪 Teken uit",logoutQ:"Teken %n uit?",
+logoutPend:"⚠️ %n verandering(e) is nog nie gestuur nie. Dit bly op hierdie foon en gaan later weg. Teken tog uit?",
+wipe:"🗑️ Vee hierdie app op hierdie foon uit",wipeQ:"Vee hierdie app se data op hierdie foon uit? Ander apps bly soos hulle is.",wipePend:"⚠️ %n verandering(e) is NIE gestuur nie en gaan VERLORE. Vee tog uit?",
+draft:"Jou teks wat nie gestoor was nie, is gehou.",ncT:"🔴 Nie gekoppel nie — nog nie",ncH:"Die app kan nie by die Sheet kom nie. Jou werk bly op hierdie foon en gaan weg sodra dit koppel.",ncOff:"Nie gekoppel nie — nog nie. Geen Sheet-skakel nie. Jou werk bly op hierdie foon."}};
+let lang=L.get("lang");if(lang&&!T[lang]){lang="en";L.set("lang","en")}   // old "ar" (Arabic removed) or unknown → English, saved
+if(!lang){const nl=(navigator.language||"en").slice(0,2).toLowerCase();lang=T[nl]?nl:"en"}
+if(!T[lang])lang="en";
+const t=k=>(T[lang]&&T[lang][k]!=null)?T[lang][k]:(T.en[k]!=null?T.en[k]:k);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $=id=>document.getElementById(id);
+/* VER 8 (Johan 31 Oct 2026): every time is 24-hour HH:MM (18:05), never AM/PM or seconds, in every language and whatever the phone is set to */
+const p2=n=>(n<10?"0":"")+n,hm=d=>p2(d.getHours())+":"+p2(d.getMinutes());
+const dLoc=()=>lang==="af"?"af-ZA":lang==="fr"?"fr-FR":"en-GB";
+window.TMC.hm=hm;
+function applyLang(){document.documentElement.lang=lang;document.documentElement.dir="ltr";document.title=C.NAME}
+window.TMC.T=T;window.TMC.t=t;
+
+/* ---------------- Name rule (shared by all TMC apps) ---------------- */
+const ADMIN_KEY=C.ADMIN_ALIASES[0];
+const NK=x=>{const n=String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[\s.]+/g,"");return C.ADMIN_ALIASES.indexOf(n)>=0?ADMIN_KEY:n};
+const clean=x=>String(x||"").trim().replace(/\s+/g," ");
+window.TMC.NK=NK;
+
+/* ---------------- Records + sync ---------------- */
+let R=L.j("recs",{}),dirty=L.j("dirty",{});
+let dev=L.get("dev");if(!dev){dev="d"+Math.random().toString(36).slice(2,10);L.set("dev",dev)}
+const saveR=()=>{L.sj("recs",R);L.sj("dirty",dirty)};
+const all=kind=>Object.keys(R).map(k=>R[k]).filter(r=>r.kind===kind&&!r.del).map(r=>r.data);
+/* ADMIN FIX RULE: staff may only ADD. Changing/deleting an existing record (not "u") is Admin-only; the server enforces it too. */
+/* PERMISSIONS: the Admin ticks what each person may do (CONFIG.PERMS). Admin = everything. The server checks too. */
+function permsOf(u){return u&&Array.isArray(u.perms)?u.perms:(C.PERM_DEFAULT||[])}
+function can(p,u){u=u||me();return !!u&&(!!u.admin||permsOf(u).indexOf(p)>=0)}
+function canKind(kind,what,u){const k=(C.PERM_KINDS||{})[kind];return !k||!k[what]||can(k[what],u)}
+function permLab(p){return p[lang]||p.en}
+/* VER 6 ADMIN FIX RULE (phone): role + token decide, never the team code alone. Admin with a token = fix, even if a team code is saved.
+   A team-code phone with no token counts as staff (the server refuses its fixes). See tests/admin_fix_test_spec.md. */
+function canFix(){const m=me();if(!(m&&m.admin))return false;return !!(sTok()||!sCode())}
+function put(kind,id,data){if(updLock){toast(t("updGo"));return false}const k=kind+":"+id;if(kind==="u"&&R[k]&&!R[k].del&&isMain(R[k].data)&&!mainKept(data)){toast(t("dscMain"));return false}if(kind!=="u"&&R[k]&&!R[k].del&&!canFix()){alert(t("fixOnly"));return false}if(kind!=="u"&&!R[k]&&!canKind(kind,"add")){alert(t("noAccess"));return false}const u=Math.max(Date.now(),R[k]?R[k].u+1:0);R[k]={kind:kind,id:String(id),u:u,del:0,data:data};dirty[k]=1;saveR();syncSoon();return true}
+function remove(kind,id){if(updLock){toast(t("updGo"));return false}const k=kind+":"+id;if(kind==="u")return false;if(kind!=="u"&&!canFix()){alert(t("fixOnly"));return false}const u=Math.max(Date.now(),R[k]?R[k].u+1:0);R[k]={kind:kind,id:String(id),u:u,del:1,data:null};dirty[k]=1;saveR();syncSoon();return true}
+/* fix(): Admin changes one field; old value, Admin name and time are kept in data._fix (audit column) and the server "Fix log" tab. */
+function fix(kind,id,field,val){if(!canFix())return false;const k=kind+":"+id,r=R[k];if(!r||r.del)return false;const d=Object.assign({},r.data),old=d[field];if(String(old)===String(val))return true;
+  d._fix=(Array.isArray(d._fix)?d._fix:[]).concat([{f:field,old:old,by:me().name,at:new Date().toISOString()}]);d[field]=val;return put(kind,id,d)!==false}
+function fixBtn(kind,id,field){return canFix()?`<button type="button" class="fixB" data-k="${esc(kind)}" data-i="${esc(id)}" data-f="${esc(field)}">${esc(t("fix"))}</button>`:""}
+function fixedNote(d){const f=d&&Array.isArray(d._fix)&&d._fix[d._fix.length-1];return f?`<span class="hint fixN">✏️ ${esc(t("fixed"))} ${esc(f.by)} · ${esc(String(f.at).slice(0,16).replace("T"," "))}</span>`:""}
+function bindFix(){if(!canFix())return;document.querySelectorAll(".fixB").forEach(b=>b.onclick=()=>{const kind=b.dataset.k,id=b.dataset.i,f=b.dataset.f,r=R[kind+":"+id];if(!r)return;
+  const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card"><h2>${esc(t("fixT"))}</h2><textarea id="fixV" rows="3" spellcheck="true" autocorrect="on"></textarea><button type="button" id="fixS">${esc(t("fixSave"))}</button><button type="button" class="sec" id="fixX">${esc(t("close"))}</button></div>`;
+  document.body.appendChild(m);$("fixV").value=r.data[f]==null?"":String(r.data[f]);const x=()=>m.remove();$("fixX").onclick=x;
+  $("fixS").onclick=()=>{const v=$("fixV").value.trim();if(!v)return;fix(kind,id,f,v);x();render()}})}
+window.TMC.fix=fix;window.TMC.canFix=canFix;window.TMC.fixBtn=fixBtn;window.TMC.bindFix=bindFix;window.TMC.fixedNote=fixedNote;
+window.TMC.can=can;window.TMC.canKind=canKind;window.TMC.permsOf=permsOf;
+window.TMC.put=put;window.TMC.remove=remove;window.TMC.all=all;
+const sUrl=()=>L.get("syurl")||C.SYNC_URL,sCode=()=>L.get("sycode")||C.SYNC_CODE;
+const sTok=()=>L.get("tok")||"";
+const tokMode=()=>!!(sUrl()&&!sCode());           // VER 4: no code → name+PIN session token
+const syncOn=()=>!!(sUrl()&&(sCode()||sTok()));
+let netBad=false;                                   // true only when the server can't be reached or rejects us
+function api(body){return fetch(sUrl(),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({device:dev},body))})
+  .then(r=>r.json()).then(j=>{netBad=false;paintSync();return j},e=>{netBad=true;paintSync();throw e})}
+window.TMC.api=api;
+const pending=()=>Object.keys(dirty).length;
+let sState="",busy=null,tmr=null,fails=0;
+function syncSoon(ms){clearTimeout(tmr);tmr=setTimeout(()=>syncNow(),ms==null?800:ms)}
+let relog=null,relogNo=0,force={};
+function syncNow(){
+  // token phone signed in offline (or token lost): get a new token with this phone's own stored PIN hash
+  // VER 6: an Admin on a team-code phone also gets its own token (so its fixes count as Admin). If that fails, it keeps syncing by code.
+  const adm=me(),codeAdm=!tokMode()&&sUrl()&&sCode()&&adm&&adm.admin&&adm.pinH&&!relogNo;
+  if((tokMode()||codeAdm)&&!sTok()){const u=me();if(!u||!u.pinH)return Promise.resolve(false);
+    if(!relog)relog=api({action:"login",id:u.id,pinH:u.pinH}).then(j=>{relog=null;if(j&&j.ok){L.set("tok",j.token);return syncNow()}if(codeAdm){relogNo=1;return syncNow()}if(j&&j.error!=="locked"){signOut();render()}return false},()=>{relog=null;if(codeAdm){relogNo=1;return syncNow()}syncSoon(30000);return false});
+    return relog}
+  if(!syncOn())return Promise.resolve(false);
+  if(busy)return busy;
+  const keys=Object.keys(dirty),sent={};
+  const changes=keys.map(k=>{const r=R[k];sent[k]=r.u;return {kind:r.kind,id:r.id,u:r.u,del:r.del,data:r.data}});
+  sState="busy";paintSync();
+  busy=fetch(sUrl(),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"sync",code:sTok()?undefined:(sCode()||undefined),token:sTok()||undefined,device:dev,since:+(L.get("since")||0),changes:changes})})
+  .then(r=>r.json()).then(j=>{
+    if(j&&!j.ok&&(j.error==="bad_token"||j.error==="not_active")){const hadTok=!!sTok();L.del("tok");if(sCode()&&hadTok){relogNo=0;syncSoon(300)}else if(tokMode()&&hadTok)syncSoon(300)}  // VER 7: re-check now (a discarded user is signed out at once)
+    if(!j||!j.ok)throw new Error(j&&j.error||"sync");
+    Object.keys(sent).forEach(k=>{if(R[k]&&R[k].u===sent[k])delete dirty[k]});
+    const F=force;force={};
+    (j.records||[]).forEach(s=>{const k=s.kind+":"+s.id,u=+s.u||0,loc=R[k];if(F[k]&&!dirty[k]){delete F[k]}else if(loc&&(loc.u>u||(dirty[k]&&loc.u>=u)))return;
+      let d=s.data;if(typeof d==="string"){try{d=d?JSON.parse(d):null}catch(e){d=null}}if(s.kind==="u"&&(s.del||!d)&&loc&&!loc.del&&!(s.del&&d&&d.discarded===1))return;if(s.kind==="u"&&d&&!d.pinH&&d.hasPin&&!d.pinReset&&loc&&loc.data&&loc.data.pinH){d.pinH=loc.data.pinH;d.salt=loc.data.salt}R[k]={kind:s.kind,id:String(s.id),u:u,del:s.del?1:0,data:d}});
+    L.set("since",String(j.now||Date.now()));L.set("lastOk",String(Date.now()));saveR();fails=0;sState="ok";netBad=false;
+    /* VER 6: the server refused a fix (admin_only_fix): tell the user and take the server copy back, so no phone keeps a fix only it has */
+    if(j.refused&&Array.isArray(j.refusedDiscard)&&j.refusedDiscard.length){j.refusedDiscard.forEach(id=>{if(!dirty["u:"+id])force["u:"+id]=1});L.set("since","0");toast(t(j.refusedWhy==="main_admin"?"dscMain":j.refusedWhy==="last_admin"?"dscLast":j.refusedWhy==="self"?"dscSelf":"dscTok"));syncSoon(200)}
+    else if(j.refused&&j.refusedWhy==="admin_only_fix"){Object.keys(sent).forEach(k=>{if(k.indexOf("u:")!==0&&!dirty[k])force[k]=1});L.set("since","0");toast(t("fixRef"));syncSoon(200)}
+    return true})
+  .catch(e=>{fails++;sState="err";netBad=true;syncSoon(navigator.onLine?Math.min(120000,5000*Math.pow(2,fails-1)):60000);return false})
+  .then(ok=>{busy=null;paintSync();if(ok)phSoon(1000);try{onData()}catch(e){console.warn(e)}if(ok&&pending())syncSoon(300);return ok});
+  return busy;
+}
+/* Restore a backup: MERGES records only. Never removes users or any record; a backup with no users keeps the current users. */
+function restoreBackup(b){const recs=Array.isArray(b)?b:(b&&(b.records||b.R))||[];const list=Array.isArray(recs)?recs:Object.keys(recs).map(k=>recs[k]);let n=0;
+  list.forEach(s=>{if(!s||!s.kind||s.id==null||s.del)return;let d=s.data;if(typeof d==="string"){try{d=JSON.parse(d)}catch(e){return}}if(d==null||typeof d!=="object")return;
+    const k=s.kind+":"+s.id,loc=R[k];if(loc&&!loc.del&&(+s.u||0)<=loc.u)return;if(s.kind==="u"&&loc&&!loc.del)return;
+    R[k]={kind:s.kind,id:String(s.id),u:Math.max(+s.u||0,loc?loc.u+1:0),del:0,data:d};dirty[k]=1;n++});
+  saveR();syncSoon();return n}
+window.TMC.restoreBackup=restoreBackup;
+window.TMC.syncNow=syncNow;window.TMC.pending=pending;
+addEventListener("online",()=>syncSoon(100));
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){syncSoon(100);checkUpdate()}});
+setInterval(()=>{if(!document.hidden)syncNow()},60000);
+
+/* ---------------- Users / session ---------------- */
+const users=()=>all("u");
+const approved=u=>u&&u.status==="active";
+const hasAdmin=()=>users().some(u=>approved(u)&&u.admin);
+async function H(pin,salt){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(salt+":"+pin));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}
+function me(){const id=L.get("uid"),ok=L.get("uok");if(!id||!ok)return null;const u=users().find(x=>x.id===id);if(!u||!approved(u)||ok!==u.id+":"+u.pinH)return null;return u}
+window.TMC.me=me;
+function signOut(){L.del("uid");L.del("uok");L.del("tok");relogNo=0}  // VER 6: always drop the token, so the next person on this phone never gets the Admin's token
+function fails_(k){const F=L.j("pinFail",{}),now=Date.now();return (F[k]||[]).filter(x=>now-x<36e5)}
+function addFail(k){const F=L.j("pinFail",{});F[k]=fails_(k).concat([Date.now()]);L.sj("pinFail",F)}
+function clearFail(k){const F=L.j("pinFail",{});delete F[k];L.sj("pinFail",F)}
+
+/* ---------------- Screens ---------------- */
+let tab="home",flow=null; // flow = sign-in sub-screen
+function card(inner){return `<div class="full"><div class="signin"><div class="card"><img class="logo" src="icons/icon-192.png" alt="">${inner}${insHTML()}</div><div id="ncW" class="bar ncW ncBox"></div></div></div>`}
+function langBtns(){return `<div class="langs"><select id="langSel" aria-label="Language">${["en","fr","af"].map(l=>`<option value="${l}"${l===lang?" selected":""}>🌐 ${l==="en"?"English":l==="fr"?"Français":"Afrikaans"}</option>`).join("")}</select></div>`}
+function pinInput(id,ph){return `<div class="pw"><input id="${id}" name="${C.APP_ID}-${id}-${Math.random().toString(36).slice(2,7)}" class="msk" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" placeholder="${esc(ph)}"><button type="button" class="eye" data-eye="${id}">👁</button></div>`}
+/* Redraw guard: once the user types or ticks in a form, a background sync does not redraw (and wipe) it.
+   The new data shows on the next render() (Save, Back, tab change). Fields marked data-nodirty and the language picker don't count. */
+let formDirty=0;document.addEventListener("input",e=>{const el=e.target;if(el&&el.closest&&el.closest("#app")&&!el.dataset.nodirty&&el.id!=="langSel"&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))formDirty=1},true);
+window.TMC.formDirty=()=>formDirty;
+function render(){
+  formDirty=0;applyLang();const A=$("app");
+  const u=me();
+  if(!u){A.innerHTML=signinHTML();bindSignin();return}
+  flow=null;
+  if(tab==="users"&&!u.admin)tab="home";if(tab==="work"&&!workOk(u))tab="home";if(tab==="reports"&&!(repOk(u)&&REPORTS.length))tab="home";
+  A.innerHTML=`<header id="hBand"><img src="icons/icon-192.png" alt=""><div class="t">${esc(C.SHORT)}</div><span class="hS" id="hS"><span id="sDot" class="dot"></span><span id="sTime" class="sTime"></span></span><select id="hLang" class="hLang" aria-label="Language">${["en","fr","af"].map(l=>`<option value="${l}"${l===lang?" selected":""}>${l.toUpperCase()}</option>`).join("")}</select></header>
+  <main><div id="ncW" class="bar ncW"></div><div id="updW" class="bar updW"></div><div id="pendW" class="bar pendW"></div><div id="view">${viewHTML(u)}</div></main>
+  <nav class="tabs">${tabsOf(u).map(x=>navBtn(...x)).join("")}</nav>`;
+  bindMain(u);paintSync();paintUpd();
+}
+/* ONE list feeds the bottom tabs AND the Home tiles (same screens, icons, names, order) */
+function tabsOf(u){return [["home","🏠"],...(workOk(u)?[["work","🔧"]]:[]),...(repOk(u)&&REPORTS.length?[["reports","📊"]]:[]),["can","✅"],...(u.admin?[["users","👥",users().filter(x=>x.status==="pending").length]]:[]),["settings","⚙️"]]}
+function repOk(u){u=u||me();return !!u&&(!!u.admin||can("reports",u))}
+function workOk(u){return (C.PERMS||[]).length===0||["view","add","reports","export"].some(p=>can(p,u))}
+function navBtn(k,ic,n){return `<button type="button" data-tab="${k}" class="${tab===k?"on":""}"><span class="ticon">${ic}</span><span class="tlab">${esc(t(k))}</span>${n?`<span class="badge">${n}</span>`:""}</button>`}
+window.TMC.render=render;
+
+function signinHTML(){
+  const f=flow||{s:"name"};
+  if(f.s==="loading")return card(`<h2>${esc(t("loading"))}</h2>`);
+  if(f.s==="net")return card(`<h2>📶 ${esc(t("netT"))}</h2><p class="hint">${esc(t("netH"))}</p><button type="button" id="fRetry">${esc(t("retry"))}</button><button type="button" class="sec" id="fOther">${esc(t("other"))}</button>`);
+  if(f.s==="pin")return card(`<h2>${esc(t("pinT"))}</h2><p><b>${esc(f.u.name)}</b></p>${pinInput("fPin",t("pin"))}<p class="err" id="fErr"></p><button type="button" id="fGo">${esc(t("go"))}</button><button type="button" class="sec" id="fOther">${esc(t("other"))}</button>`);
+  if(f.s==="set")return card(`<h2>${esc(f.setup?t("setupT"):t("setT"))}</h2><p><b>${esc(f.u.name)}</b></p><p class="hint">${esc(f.setup?t("setupH"):t("setH"))}</p>${pinInput("fPin",t("pin"))}${pinInput("fPin2",t("pin2"))}<p class="err" id="fErr"></p><button type="button" id="fSet">${esc(t("save"))}</button><button type="button" class="sec" id="fOther">${esc(t("other"))}</button>`);
+  if(f.s==="wait")return card(`<h2>⏳ ${esc(t("waitT"))}</h2><p class="hint">${esc(t("waitH").replace("%n",f.name))}</p><button type="button" id="fCheck">${esc(t("check"))}</button><button type="button" class="sec" id="fOther">${esc(t("other"))}</button>`);
+  if(f.s==="dup")return card(`<h2 id="dupT">✋ ${esc(t("dupT"))}</h2><p class="hint" style="font-size:18px">${esc(t("dupH"))}</p><button type="button" id="fCheck" style="min-height:60px">${esc(t("check"))}</button><button type="button" class="sec" id="fOther" style="min-height:60px">${esc(t("other"))}</button>`);
+  if(f.s==="gone")return card(`<h2 id="goneT">❌ ${esc(t("goneT"))}</h2><p class="hint" style="font-size:18px">${esc(t("goneH"))}</p><button type="button" id="fAgain" style="min-height:60px">${esc(t("again"))}</button><button type="button" class="sec" id="fOther" style="min-height:60px">${esc(t("other"))}</button>`);
+  if(f.s==="rej")return card(`<h2>❌ ${esc(t("rejT"))}</h2><p class="hint">${esc(t("rejH"))}</p><button type="button" class="sec" id="fOther">${esc(t("other"))}</button>`);
+  if(f.s==="blk")return card(`<h2>⛔ ${esc(t("blkT"))}</h2><p class="hint">${esc(t("blkH"))}</p><button type="button" class="sec" id="fOther">${esc(t("other"))}</button>`);
+  return `<div class="full tmcS" style="--tmcS-c:${esc(C.COLOR)};--tmcS-cd:${esc(C.COLOR_DARK)}"><div class="signin"><div class="card"><img class="tmcS-logo logo" src="icons/icon-192.png" width="84" height="84" alt=""><h2 class="tmcS-t">${esc(C.NAME)}</h2><select id="langSel" class="tmcS-lang" aria-label="Language">${["en","fr","af"].map(l=>`<option value="${l}"${l===lang?" selected":""}>🌐 ${l==="en"?"English":l==="fr"?"Français":"Afrikaans"}</option>`).join("")}</select><input id="fName" class="tmcS-name" name="${C.APP_ID}-who" type="text" autocomplete="off" autocapitalize="words" spellcheck="true" autocorrect="on" data-lpignore="true" data-1p-ignore="true" placeholder="${esc(t("nameH"))}" value="${esc(L.get("lastName")||"")}"><p class="err tmcS-err" id="fErr"></p><button type="button" id="fName2" class="tmcS-go">${esc(t("go"))}</button>${insHTML()}</div><div id="ncW" class="bar ncW ncBox" role="alert"></div></div></div>`;
+}
+function err(m){const e=$("fErr");if(e){e.textContent=m;e.style.display="block"}}
+function bindCommon(){
+  document.querySelectorAll("#langSel").forEach(b=>b.onchange=()=>{lang=b.value;L.set("lang",lang);render()});
+  document.querySelectorAll("[data-eye]").forEach(b=>b.onclick=()=>{const i=$(b.dataset.eye);i.classList.toggle("shw")});
+  bindIns();
+}
+function bindSignin(){
+  bindCommon();
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  on("fOther",()=>{flow=null;render()});
+  on("fName2",()=>startName($("fName").value));
+  const n=$("fName");if(n)n.onkeydown=e=>{if(e.key==="Enter")startName(n.value)};
+  on("fRetry",()=>startName(flow.name));
+  on("fCheck",()=>{if(tokMode())return srvLookup(flow.name,false);const nm=flow.name;syncNow().then(()=>{const K=NK(nm);if(!users().some(u=>NK(u.name)===K)){flow={s:"gone",name:nm};return render()}lookup(nm)})});  // VER 7: request discarded → offer a fresh one
+  on("fAgain",()=>startName(flow.name));
+  on("fGo",checkPin);on("fSet",setPin);
+  const p=$("fPin");if(p){p.focus();p.onkeydown=e=>{if(e.key==="Enter")(flow.s==="pin"?checkPin:setPin)()}}
+}
+/* VER 4 token flow: ask the script who this name is (works on a fresh phone with no code) */
+async function startName(raw){
+  const name=clean(raw);if(!name)return err(t("needName"));
+  L.set("lastName",name);
+  if(tokMode())return srvLookup(name,true);
+  // fresh phone / reinstall: pull everything from the Sheet BEFORE matching the name
+  if(syncOn()&&!(+(L.get("since")||0)>0)){flow={s:"loading",name:name};render();await syncNow();
+    if(!(+(L.get("since")||0)>0)&&!users().length){flow={s:"net",name:name};render();return}}
+  lookup(name);
+}
+async function srvLookup(name,reg){
+  flow={s:"loading",name:name};render();
+  let j;try{j=await api({action:"status",name:name});if(j&&j.ok&&j.state==="none"&&reg)j=await api({action:"register",name:name})}catch(e){j=null}
+  if(!j||!j.ok){if(users().length)return lookup(name,true);flow={s:"net",name:name};return render()}
+  const st=j.state;
+  if(st==="active"){const u=users().find(x=>x.id===j.id)||{id:j.id,name:j.name};flow={s:j.hasPin?"pin":"set",u:Object.assign({},u,{name:j.name,salt:j.salt||u.salt}),name:name,srv:1};return render()}
+  if(st==="setup"){flow={s:"set",setup:true,u:{id:"",name:C.ADMIN_NAME},name:name,srv:1};return render()}
+  if(st==="blocked"){flow={s:"blk",name:name};return render()}
+  if(st==="rejected"){flow={s:"rej",name:name};return render()}
+  if(st==="dup"||(st==="pending"&&j.other)){flow={s:"dup",name:name,srv:1};return render()}  // ONE request per name per app
+  if(st==="none"&&!reg){flow={s:"gone",name:name};return render()}  // VER 7: the Admin discarded this request
+  flow={s:"wait",name:name,srv:1};render();
+}
+async function gotToken(j,u){
+  L.set("tok",j.token);L.del("since");await syncNow();
+  const me_=users().find(x=>x.id===j.id);
+  if(!me_){flow={s:"net",name:flow&&flow.name};return render()}
+  if(!me_.pinH&&u&&u.pinH){me_.pinH=u.pinH;me_.salt=u.salt;saveR()}
+  L.set("uid",me_.id);L.set("uok",me_.id+":"+me_.pinH);tab="home";flow=null;render();
+}
+function lookup(name,localOnly){
+  if(tokMode()&&!localOnly)return srvLookup(name,true);
+  const K=NK(name),all_=users().filter(u=>NK(u.name)===K),ok=all_.filter(approved);
+  if(ok.length===1){if(!ok[0].pinH&&ok[0].hasPin&&!tokMode()&&navigator.onLine&&!localOnly)return srvLookup(name,true);if((tokMode()||ok[0].hasPin)&&!ok[0].pinH){flow={s:"net",name:name};return render()}  // token phones only hold their own PIN hash
+    flow={s:ok[0].pinH?"pin":"set",u:ok[0],name:name};return render()}
+  if(ok.length===0){
+    if(all_.some(u=>u.status==="blocked")){flow={s:"blk",name:name};return render()}
+    if(all_.some(u=>u.status==="rejected")){flow={s:"rej",name:name};return render()}
+    if(!hasAdmin()&&K===ADMIN_KEY){flow={s:"set",setup:true,u:{id:"u"+Date.now(),name:C.ADMIN_NAME,status:"active",admin:1,dev:dev,at:new Date().toISOString()},name:name};return render()}
+  }
+  // no single approved match (none, or 2+ sharing the key): a normal approval request
+  if(tokMode()){flow={s:"net",name:name};return render()}  // token phones register on the server only
+  const own=users().find(u=>u.status==="pending"&&NK(u.name)===K&&(ok.length<2||(u.dev===dev&&clean(u.name).toLowerCase()===name.toLowerCase())));
+  if(!own&&ok.length<2&&users().some(u=>NK(u.name)===K&&(u.status==="pending"||u.status==="active"))){flow={s:"dup",name:name};return render()}  // ONE request per name per app
+  if(!own){const r={id:"r"+Date.now(),name:name,status:"pending",dev:dev,at:new Date().toISOString()};put("u",r.id,r)}
+  flow={s:"wait",name:name};render();
+}
+async function checkPin(){
+  const u=flow.u,k=NK(u.name),v=$("fPin").value;
+  let F=fails_(k);
+  if(F.length>=5){$("fPin").value="";return err(t("pinLock").replace("%m",Math.max(1,Math.ceil((F[0]+36e5-Date.now())/6e4))))}
+  if(flow.srv&&navigator.onLine){let j=null;try{j=await api({action:"login",id:u.id,pinH:await H(v,u.salt)})}catch(e){}
+    if(j&&j.ok){clearFail(k);return gotToken(j,Object.assign({},u,{pinH:await H(v,u.salt)}))}
+    if(j){addFail(k);$("fPin").value="";return err(j.error==="locked"?t("pinLock").replace("%m",Math.max(1,Math.ceil(((j.until||Date.now()+36e5)-Date.now())/6e4))):t("pinWrong"))}}
+  if(u.pinH&&await H(v,u.salt)===u.pinH){clearFail(k);L.set("uid",u.id);L.set("uok",u.id+":"+u.pinH);tab="home";flow=null;render();return}
+  addFail(k);F=fails_(k);$("fPin").value="";
+  err(F.length>=5?t("pinLock").replace("%m",60):t("pinWrong"));
+}
+async function setPin(){
+  const a=$("fPin").value,b=$("fPin2").value;
+  if(!/^[0-9]{4,6}$/.test(a))return err(t("pinBad"));if(a!==b)return err(t("pinDiff"));
+  const u=Object.assign({},flow.u),salt=Math.random().toString(36).slice(2,12);u.salt=salt;u.pinH=await H(a,salt);
+  if(flow.srv){let j=null;try{j=await api({action:"setpin",id:u.id,setup:flow.setup?1:0,name:flow.name,salt:salt,pinH:u.pinH})}catch(e){}
+    if(j&&j.ok)return gotToken(j,u);return err(j?j.error:t("ncT"))}
+  put("u",u.id,u);L.set("uid",u.id);L.set("uok",u.id+":"+u.pinH);tab="home";flow=null;render();
+}
+
+/* ---------------- Main views ---------------- */
+function viewHTML(u){
+  if(tab==="work")return workHTML(u);
+  if(tab==="users")return usersHTML(u);
+  if(tab==="settings")return settingsHTML(u);
+  if(tab==="can")return canHTML(u);
+  if(tab==="reports")return repScreenHTML(u);
+  const np=users().filter(x=>x.status==="pending").length;
+  return `<div class="box hhero" id="hHero"><img src="icons/icon-192.png" alt="" width="64" height="64"><div><h2>${esc(C.NAME)}</h2><div id="hDate">${esc(new Date().toLocaleDateString(lang==="af"?"af-ZA":lang==="fr"?"fr-FR":"en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))}</div><div class="hhi" id="hHello">👋 ${esc(t("hello"))}, ${esc(u.name)}</div></div></div><button type="button" class="sec loBand" id="hOut">${esc(t("logout"))}</button>
+  <div class="tiles">${tabsOf(u).filter(x=>x[0]!=="home").map(([k,ic,n])=>`<button type="button" class="tile" data-tab="${k}"${k==="can"?' id="hCan"':""}><b>${ic}</b>${esc(t(k))}${n?` (${n})`:""}</button>`).join("")}</div>`;
+}
+/* ---- PHOTO: every photo field = 2 big buttons (camera OR phone gallery), same handler ----
+   photoHTML(id) -> HTML; bindPhoto(id, cb) -> cb(dataUrl) after resize/compress (VER 9: max 800px, JPEG 0.5 → ≤ ~100 KB). */
+function photoHTML(id){return `<div class="phPick" id="${id}"><label class="phCam"><input type="file" accept="image/*" capture="environment" data-ph="${id}">${esc(t("phTake"))}</label><label class="alt phGal"><input type="file" accept="image/*" data-ph="${id}">${esc(t("phPick"))}</label></div>`}
+function shrinkPhoto(file,max,q){return new Promise((ok,no)=>{const r=new FileReader();r.onerror=no;r.onload=()=>{const im=new Image();im.onerror=no;im.onload=()=>{const k=Math.min(1,(max||1280)/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",q||0.7))};im.src=r.result};r.readAsDataURL(file)})}
+function bindPhoto(id,cb){document.querySelectorAll(`input[data-ph="${id}"]`).forEach(i=>i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;window.TMC.lastPhotoFrom=i.hasAttribute("capture")?"camera":"phone";phSmall(f).then(cb).catch(()=>{});i.value=""})}
+window.TMC.photoHTML=photoHTML;window.TMC.bindPhoto=bindPhoto;window.TMC.shrinkPhoto=shrinkPhoto;
+/* ---- VER 9 PHOTOS TO DRIVE (Johan 1 Nov 2026) ----
+   Photo is made small on the phone (max 800px, JPEG ~0.5, aim 50-100 KB, digits still readable), kept in THIS app's own
+   on-phone queue (IndexedDB "<APP_ID>_photos") until the upload worked, then sent to the app's own Drive folder (made by its
+   own Code.gs). The server adds a "pl" record (link only) that syncs to every phone; the Sheet shows the Drive link.
+   Offline = it waits and retries. Old photos: TMC.phBackfill([{id,d,at,ref}]) sends them in small batches (2 at a time),
+   skipping any older than 2 months. Admin: TMC.phBtn(id) = big "View photo" button. Server deletes photos older than 2 months daily.
+   TMC.phKeep(dataUrl,ref[,id[,at]]) -> photo id (put that id in your record). TMC.phState(id) -> drive|removed|phone|none. */
+Object.assign(T.en,{phView:"🖼️ View photo",phGone:"Photo removed (older than 2 months)",phWait:"Photo not sent yet (still on the phone)",phClose:"✖ Close",phLoad:"Loading photo…",phNo:"Photo not found."});
+Object.assign(T.fr,{phView:"🖼️ Voir la photo",phGone:"Photo supprimée (plus de 2 mois)",phWait:"Photo pas encore envoyée (encore sur le téléphone)",phClose:"✖ Fermer",phLoad:"Chargement de la photo…",phNo:"Photo introuvable."});
+Object.assign(T.af,{phView:"🖼️ Kyk foto",phGone:"Foto verwyder (ouer as 2 maande)",phWait:"Foto nog nie gestuur nie (nog op die foon)",phClose:"✖ Maak toe",phLoad:"Foto laai…",phNo:"Foto nie gevind nie."});
+const PH_DAYS=60,PH_MAX=800,PH_Q=0.5,PH_AIM=136000;   // 136000 base64 chars ≈ 100 KB
+let phDbP=null;
+function phDb(){return phDbP||(phDbP=new Promise((ok,no)=>{try{const r=indexedDB.open(P+"photos",1);r.onupgradeneeded=()=>r.result.createObjectStore("q",{keyPath:"id"});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}))}
+function phTx(mode,f){return phDb().then(db=>new Promise((ok,no)=>{const tx=db.transaction("q",mode),s=tx.objectStore("q");let out;const r=f(s);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>ok(out);tx.onerror=()=>no(tx.error)}))}
+const phQ={all:()=>phTx("readonly",s=>s.getAll()).then(a=>a||[]),get:id=>phTx("readonly",s=>s.get(id)),put:o=>phTx("readwrite",s=>s.put(o)),del:id=>phTx("readwrite",s=>s.delete(id))};
+const phOld=at=>Date.now()-(Date.parse(at)||Date.now())>PH_DAYS*864e5;
+const phRec=id=>{const r=R["pl:"+id];return r&&!r.del?r.data:null};
+function phState(id){const d=phRec(id);return d?(d.removed?"removed":"drive"):(phLocal[id]?"phone":"none")}
+const phLocal={};   // ids waiting in this phone's queue (filled from IndexedDB at start)
+function phSmall(file){return shrinkPhoto(file,PH_MAX,PH_Q).then(d=>d.length<=PH_AIM?d:shrinkPhoto(file,PH_MAX,0.4)).then(d=>d.length<=PH_AIM?d:shrinkPhoto(file,PH_MAX,0.3))}
+function phKeep(d,ref,id,at){id=String(id||("ph"+Date.now()+Math.random().toString(36).slice(2,6)));phLocal[id]=1;
+  phQ.put({id:id,d:String(d),at:at||new Date().toISOString(),ref:String(ref||"").slice(0,80)}).then(()=>phSoon(300)).catch(e=>console.warn(e));return id}
+function phBackfill(list){return phQ.all().then(q=>{const have={};q.forEach(o=>have[o.id]=1);let n=0;
+  (list||[]).forEach(o=>{if(!o||!o.id||!o.d||have[o.id]||phRec(o.id)||phOld(o.at))return;phKeep(o.d,o.ref,o.id,o.at);n++});return n}).catch(()=>0)}
+let phBusy=false,phTmr=null,phFails=0;
+function phSoon(ms){clearTimeout(phTmr);phTmr=setTimeout(phPump,ms==null?2000:ms)}
+function phPump(){if(phBusy||!syncOn()||!navigator.onLine)return Promise.resolve(0);if(tokMode()&&!sTok())return Promise.resolve(0);phBusy=true;let sent=0;
+  return phQ.all().then(q=>{q.sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+    const go=q.slice(0,2);   // small batches: 2 photos, then a pause
+    return go.reduce((p,o)=>p.then(()=>{if(phOld(o.at)||phRec(o.id)){delete phLocal[o.id];return phQ.del(o.id)}
+      return api({action:"photo",token:sTok()||undefined,code:sTok()?undefined:(sCode()||undefined),id:o.id,d:o.d,at:o.at,ref:o.ref}).then(j=>{
+        if(j&&j.ok){sent++;delete phLocal[o.id];return phQ.del(o.id)}                         // only now the phone copy goes
+        if(j&&/^(bad_photo|bad_id|too_big)$/.test(j.error||"")){delete phLocal[o.id];return phQ.del(o.id)}
+        throw new Error(j&&j.error||"photo")})}),Promise.resolve()).then(()=>q.length-go.length)})
+  .then(left=>{phBusy=false;phFails=0;if(sent)syncSoon(200);if(left>0)phSoon(15000);return sent})
+  .catch(e=>{phBusy=false;phFails++;phSoon(Math.min(300000,15000*Math.pow(2,phFails-1)));return sent})}
+phQ.all().then(q=>{q.forEach(o=>phLocal[o.id]=1);if(q.length)phSoon(5000)}).catch(()=>{});
+addEventListener("online",()=>phSoon(1500));
+function phBtn(id){const u=me();if(!id||!u||!u.admin)return "";const s=phState(id);
+  if(s==="removed")return `<p class="hint phGone">${esc(t("phGone"))}</p>`;
+  return `<button type="button" class="phView" data-phv="${esc(id)}">${esc(t("phView"))}</button>`}
+function phShow(src,msg){let o=document.getElementById("phOv");if(!o){o=document.createElement("div");o.id="phOv";o.className="phOv";document.body.appendChild(o)}
+  o.innerHTML=`${src?`<img alt="" src="${esc(src)}">`:`<p class="phMsg">${esc(msg||"")}</p>`}<button type="button" id="phOvX">${esc(t("phClose"))}</button>`;$("phOvX").onclick=()=>o.remove()}
+function phView(id){const u=me();if(!u||!u.admin)return Promise.resolve(false);
+  return phQ.get(id).catch(()=>null).then(o=>{if(o&&o.d){phShow(o.d);return true}const d=phRec(id);
+    if(d&&d.removed){phShow("",t("phGone"));return false}if(window.TMC.phLocalGet){const x=window.TMC.phLocalGet(id);if(x){phShow(x);return true}}
+    if(!d){phShow("",t("phWait"));return false}phShow("",t("phLoad"));
+    return api({action:"photoget",token:sTok()||undefined,id:id}).then(j=>{if(j&&j.ok&&j.d){phShow(j.d);return true}phShow("",t(j&&j.error==="photo_removed"?"phGone":"phNo"));return false},()=>{phShow("",t("ncT"));return false})})}
+document.addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closest("[data-phv]");if(b){e.preventDefault();phView(b.getAttribute("data-phv"))}});
+window.TMC.phKeep=phKeep;window.TMC.phBackfill=phBackfill;window.TMC.phPump=phPump;window.TMC.phState=phState;window.TMC.phBtn=phBtn;window.TMC.phView=phView;window.TMC.phSmall=phSmall;window.TMC.phQueue=()=>phQ.all();window.TMC.PH_DAYS=PH_DAYS;
+/* ---- REPORT: green company table (CONFIG REPORT_COLOR). rows=[[label,value],...] ---- */
+function reportHTML(title,rows){const tot=rows.reduce((a,r)=>a+(+r[1]||0),0);return `<div class="repH">📊 ${esc(title)}</div><table class="rep"><thead><tr><th>${esc(t("rpItem"))}</th><th>${esc(t("rpQty"))}</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</tbody><tfoot><tr><td>${esc(t("rpTot"))}</td><td>${tot}</td></tr></tfoot></table>`}
+window.TMC.reportHTML=reportHTML;
+
+/* ==== STANDARD REPORTS SCREEN (every app) ====
+   TMC.addReport({id, title:{en,fr,ar}|"key", cols:[{key,label:{en,fr,ar}|"key",num:true,d:0,sum:true}], rows:(from,to)=>[{key:value}], totalLabel?})
+   - from/to = "YYYY-MM-DD" (inclusive). Rows are filtered by the app. Totals = sum of cols with sum:true.
+   - Seen only by Admin or users with the 📊 Reports tick. Green REPORT_COLOR table, Excel (SUM formulas), Print, Back. */
+const REPORTS=[];let rp={id:null,p:"today",from:"",to:""};
+function addReport(d){const i=REPORTS.findIndex(r=>r.id===d.id);if(i>=0)REPORTS[i]=d;else REPORTS.push(d);return d}
+const tx=v=>v==null?"":typeof v==="object"?(v[lang]||v.en||""):t(v);
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function rpRange(){const n=new Date(),td=ymd(n);if(rp.p==="month")return [td.slice(0,8)+"01",ymd(new Date(n.getFullYear(),n.getMonth()+1,0))];if(rp.p==="pick"){let f=rp.from||td,to=rp.to||f;if(to<f){const x=f;f=to;to=x}return [f,to]}return [td,td]}
+function rpData(def){const [f,to]=rpRange(),rows=(def.rows(f,to)||[]),tot={};def.cols.forEach(c=>{if(c.sum)tot[c.key]=rows.reduce((a,r)=>a+(+r[c.key]||0),0)});return {f:f,to:to,rows:rows,tot:tot}}
+const fmtN=(v,d)=>v==null||v===""?"":(+v).toFixed(d||0);
+/* table in the company green (same look as TMC.reportHTML) */
+function repTable(def,D){const cs=def.cols;return `<div class="repH">📊 ${esc(tx(def.title))}</div><p class="hint" id="rpPer">${esc(t("rpPeriod"))}: ${esc(D.f===D.to?D.f:D.f+" → "+D.to)}</p><table class="rep"><thead><tr>${cs.map(c=>`<th${c.num?' class="nm"':""}>${esc(tx(c.label))}</th>`).join("")}</tr></thead><tbody>${D.rows.length?D.rows.map(r=>`<tr>${cs.map(c=>`<td${c.num?' class="nm"':""}>${esc(c.num?fmtN(r[c.key],c.d):r[c.key])}</td>`).join("")}</tr>`).join(""):`<tr><td colspan="${cs.length}">${esc(t("rpNone"))}</td></tr>`}</tbody><tfoot><tr>${cs.map((c,i)=>`<td${c.num?' class="nm"':""}>${i===0?esc(tx(def.totalLabel||"rpTot")):c.sum?esc(fmtN(D.tot[c.key],c.d)):""}</td>`).join("")}</tr></tfoot></table>`}
+const XL=(()=>{const CT=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CT[n]=c>>>0}
+ const crc=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CT[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0};
+ const zip=fs=>{const E=new TextEncoder(),P=[],D=[];let off=0;const u16=(a,v)=>a.push(v&255,(v>>8)&255),u32=(a,v)=>a.push(v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255);
+  fs.forEach(([n,s])=>{const nb=E.encode(n),db=E.encode(s),c=crc(db),h=[];u32(h,0x04034b50);u16(h,20);u16(h,0x0800);u16(h,0);u16(h,0);u16(h,0x21);u32(h,c);u32(h,db.length);u32(h,db.length);u16(h,nb.length);u16(h,0);
+   const hb=new Uint8Array(h);P.push(hb,nb,db);const d=[];u32(d,0x02014b50);u16(d,20);u16(d,20);u16(d,0x0800);u16(d,0);u16(d,0);u16(d,0x21);u32(d,c);u32(d,db.length);u32(d,db.length);u16(d,nb.length);u16(d,0);u16(d,0);u16(d,0);u16(d,0);u32(d,0);u32(d,off);D.push(new Uint8Array(d),nb);off+=hb.length+nb.length+db.length});
+  const ds=D.reduce((a,b)=>a+b.length,0),e=[];u32(e,0x06054b50);u16(e,0);u16(e,0);u16(e,fs.length);u16(e,fs.length);u32(e,ds);u32(e,off);u16(e,0);return new Blob([...P,...D,new Uint8Array(e)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})};
+ const x=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+ const col=i=>{let s="";i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26}return s};
+ /* cell = value | {v, s:"h"|"b"|"a"|"t"|"title"|"bold", d:decimals, f:formula}; rows=[[cell,...],...] */
+ function book(name,rows,widths,rc){rc=String(rc||"#1B7F3B").replace("#","").toUpperCase();const FILL={h:rc,a:"E8F3EC",t:"CDE3D4"},FMT={1:164,2:165,3:166};const X=[[0,0,0,0]],xi={};
+  const sid=(s,d,num)=>{const fill=s==="h"?2:s==="a"?3:s==="t"?4:0,font=s==="h"?1:s==="t"?2:s==="title"?3:s==="bold"?4:0,fmt=num&&d!=null?(d===0?1:FMT[d]||0):0,bd=(s==="h"||s==="a"||s==="t"||s==="b")?1:0,k=[fill,font,fmt,bd].join();if(xi[k]==null){xi[k]=X.length;X.push([fill,font,fmt,bd])}return xi[k]};
+  let sd="";rows.forEach((r,ri)=>{sd+=`<row r="${ri+1}"${(r||[]).some(c=>c&&c.s==="h"&&String(c.v).length>14)?' ht="46" customHeight="1"':""}>`;(r||[]).forEach((c,ci)=>{if(c==null||c==="")return;const o=typeof c==="object"?c:{v:c},ref=col(ci)+(ri+1),num=typeof o.v==="number"&&isFinite(o.v),st=sid(o.s,o.d,num||!!o.f);
+   if(o.f)sd+=`<c r="${ref}" s="${st}"><f>${x(o.f)}</f>${num?`<v>${o.v}</v>`:""}</c>`;else if(num)sd+=`<c r="${ref}" s="${st}"><v>${o.v}</v></c>`;else if(o.v==null||o.v===""){if(o.s)sd+=`<c r="${ref}" s="${st}"/>`}else sd+=`<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${x(o.v)}</t></is></c>`});sd+="</row>"});
+  const cols=widths&&widths.length?`<cols>${widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")}</cols>`:"";
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>${cols}<sheetData>${sd}</sheetData><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+  const fills=`<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${["h","a","t"].map(k=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${FILL[k]}"/><bgColor indexed="64"/></patternFill></fill>`).join("")}</fills>`;
+  const fonts=`<fonts count="5"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF${rc}"/><name val="Calibri"/></font><font><b/><sz val="14"/><color rgb="FF${rc}"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="0.00"/><numFmt numFmtId="166" formatCode="0.000"/></numFmts>${fonts}${fills}<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB7D7C1"/></left><right style="thin"><color rgb="FFB7D7C1"/></right><top style="thin"><color rgb="FFB7D7C1"/></top><bottom style="thin"><color rgb="FFB7D7C1"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${X.length}">${X.map(([fi,fo,nf,bd])=>`<xf numFmtId="${nf}" fontId="${fo}" fillId="${fi}" borderId="${bd}" xfId="0"${fi?' applyFill="1"':""}${fo?' applyFont="1"':""}${nf?' applyNumberFormat="1"':""}${bd?' applyBorder="1"':""}${fi===2?' applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf>':"/>"}`).join("")}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const sn=x(String(name).replace(/[\\\/?*\[\]:]/g," ").slice(0,31)||"Sheet1");
+  return zip([["[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+   ["_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+   ["xl/workbook.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${sn}" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`],
+   ["xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+   ["xl/worksheets/sheet1.xml",sheet],["xl/styles.xml",styles]])}
+ return {book:book,col:col}})();
+function repXlsx(def,D){const cs=def.cols,R=[],a=5,b=4+Math.max(D.rows.length,1);
+ R.push([{v:tx(def.title),s:"title"}],[t("rpPeriod"),{v:D.f===D.to?D.f:D.f+" → "+D.to,s:"bold"}],[]);
+ R.push(cs.map(c=>({v:tx(c.label),s:"h"})));
+ if(!D.rows.length)R.push([{v:t("rpNone"),s:"b"}]);
+ D.rows.forEach((r,i)=>{const s=i%2?"a":"b";R.push(cs.map(c=>{const v=r[c.key];return c.num&&v!==""&&v!=null&&isFinite(+v)?{v:+v,d:c.d||0,s:s}:{v:v==null?"":String(v),s:s}}))});
+ R.push(cs.map((c,i)=>i===0?{v:tx(def.totalLabel||"rpTot"),s:"t"}:c.sum?{v:+fmtN(D.tot[c.key],c.d),d:c.d||0,s:"t",f:`SUM(${XL.col(i)}${a}:${XL.col(i)}${b})`}:{v:"",s:"t"}));
+ const nm=(C.SHORT+" "+tx(def.title)+" "+(D.f===D.to?D.f:D.f+" to "+D.to)).replace(/[\\\/:*?"<>|]/g," ");
+ return {name:nm+".xlsx",blob:XL.book(tx(def.title),R,cs.map(c=>c.num?14:24),C.REPORT_COLOR)}}
+function sendXls(o){const f=typeof File==="function"?new File([o.blob],o.name,{type:o.blob.type}):null;
+ if(f&&navigator.canShare&&navigator.share&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:o.name}).catch(e=>{if(!e||e.name!=="AbortError")dlXls(o)});return Promise.resolve(dlXls(o))}
+function dlXls(o){const u=URL.createObjectURL(o.blob),a=document.createElement("a");a.href=u;a.download=o.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function repScreenHTML(u){
+ if(!repOk(u))return `<div class="box"><p>${esc(t("noAccess"))}</p></div>`;
+ const def=REPORTS.length===1?REPORTS[0]:REPORTS.find(r=>r.id===rp.id);
+ if(!def)return `<div class="box rpList" id="rpList"><h2>📊 ${esc(t("reports"))}</h2><p class="hint">${esc(t("rpPick"))}</p>${REPORTS.map(r=>`<button type="button" class="sec" data-rp="${esc(r.id)}">📊 ${esc(tx(r.title))}</button>`).join("")}</div>`;
+ const D=rpData(def),[f,to]=[D.f,D.to];
+ return `<div class="box noPr" id="rpPick"><div class="rpBar">${[["today","rpToday"],["month","rpMonth"],["pick","rpDates"]].map(([k,l])=>`<button type="button" class="sec${rp.p===k?" on":""}" data-rpp="${k}">${esc(t(l))}</button>`).join("")}</div>
+ ${rp.p==="pick"?`<div class="rpDates"><div><label for="rpF">${esc(t("rpFrom"))}</label><input type="date" id="rpF" value="${esc(f)}"></div><div><label for="rpT">${esc(t("rpTo"))}</label><input type="date" id="rpT" value="${esc(to)}"></div></div><button type="button" id="rpGo">${esc(t("rpShow"))}</button>`:""}</div>
+ <div class="box" id="rpOut">${repTable(def,D)}</div>
+ <div class="rpAct noPr">${canXlsU(u)?`<button type="button" class="rpXls" id="rpXls">${esc(t("rpXls"))}</button>`:""}<button type="button" class="sec" id="rpPrint">${esc(t("rpPrint"))}</button><button type="button" class="sec rpBk" id="rpBack">${esc(t("rpBack"))}</button></div>`}
+function canXlsU(u){return repOk(u)}
+function bindRep(u){const on=(id,fn)=>{const e=$(id);if(e)e.onclick=fn};
+ document.querySelectorAll("[data-rp]").forEach(b=>b.onclick=()=>{rp.id=b.dataset.rp;render()});
+ document.querySelectorAll("[data-rpp]").forEach(b=>b.onclick=()=>{rp.p=b.dataset.rpp;if(rp.p==="pick"&&!rp.from){const r=rpRange();rp.from=r[0];rp.to=r[1]}render()});
+ on("rpGo",()=>{rp.from=$("rpF").value;rp.to=$("rpT").value;render()});
+ const cur=()=>REPORTS.length===1?REPORTS[0]:REPORTS.find(r=>r.id===rp.id);
+ on("rpXls",()=>{const d=cur();if(d)sendXls(repXlsx(d,rpData(d)))});
+ on("rpPrint",()=>window.print());
+ on("rpBack",()=>{if(REPORTS.length>1&&rp.id){rp.id=null}else tab="home";render()})}
+Object.assign(window.TMC,{addReport:addReport,REPORTS:REPORTS,XL:XL,repXlsx:repXlsx,rpData:rpData,sendXls:sendXls,repOk:repOk,rp:()=>rp});
+/* ==================== APP FEATURES START ====================
+   Workshop jobs. Kinds: j job, m material on a job, p completed photo,
+   t queued Food transfer (mock until stock-transfer-contract.md), k stock movement.
+   Kind u is reserved. No live Food call. A transfer ref is credited once.
+   Allocating to a job deducts workshop stock and never goes below zero.
+   Successful Save calls TMC.afterSave(true). */
+Object.assign(T.en,{wjTitle:"Jobs",wjNew:"New job",wjNone:"No jobs yet. Tap New job.",wjNoneF:"No jobs of this type.",wjSample:"Sample only. Steel, rope and the photo stay on this job.",wjAll:"All",wjBuild:"Build",wjRepair:"Repair",wjName:"Job name",wjNameH:"Job name",wjType:"Build or Repair",wjNeed:"Type the job name.",wjSave:"Save job",wjSteel:"Add steel",wjRope:"Add rope",wjOther:"Add other",wjDesc:"What was used",wjDescH:"Description",wjPcs:"Pieces",wjLen:"Length",wjUnit:"Unit",wjNeedDesc:"Type what was used.",wjNeedPcs:"Type how many pieces.",wjNeedLen:"Type the length.",wjBadNum:"Use a number like 2 or 12.5.",wjSaveM:"Save material",wjTot:"On this job",wjSteelTot:"Steel",wjRopeTot:"Rope",wjOtherTot:"Other",wjHist:"Materials used",wjNoMat:"Nothing loaded on this job yet.",wjPhoto:"Completed photo",wjPhotoH:"Take or upload a photo of the finished job.",wjNeedPh:"Take or upload a photo first.",wjSavePh:"Save photo",wjDone:"Completed",wjOpenJob:"No photo yet",wjEx:"EXAMPLE",wjPcsU:"pieces",wjWhen:"Saved",wjStock:"Workshop stock",wjStockH:"Sample only. Food is not connected. Stock appears when a transfer is accepted.",wjQueue:"Queue example from Food",wjQueued:"Queued",wjReceived:"Received",wjReceive:"Receive",wjOnHand:"On hand",wjNoneSt:"No stock yet. Queue an example from Food, then Receive.",wjAudit:"Stock history",wjShort:"Not enough in workshop stock.",wjIn:"In from Food (example)",wjOut:"Used on a job",wjHave:"On hand now"});
+Object.assign(T.fr,{wjTitle:"Travaux",wjNew:"Nouveau travail",wjNone:"Pas encore de travail. Touchez Nouveau travail.",wjNoneF:"Aucun travail de ce type.",wjSample:"Exemple seulement. L'acier, la corde et la photo restent sur ce travail.",wjAll:"Tous",wjBuild:"Construction",wjRepair:"Réparation",wjName:"Nom du travail",wjNameH:"Nom du travail",wjType:"Construction ou réparation",wjNeed:"Écrivez le nom du travail.",wjSave:"Enregistrer le travail",wjSteel:"Ajouter acier",wjRope:"Ajouter corde",wjOther:"Ajouter autre",wjDesc:"Ce qui a été utilisé",wjDescH:"Description",wjPcs:"Pièces",wjLen:"Longueur",wjUnit:"Unité",wjNeedDesc:"Écrivez ce qui a été utilisé.",wjNeedPcs:"Écrivez le nombre de pièces.",wjNeedLen:"Écrivez la longueur.",wjBadNum:"Utilisez un nombre comme 2 ou 12,5.",wjSaveM:"Enregistrer",wjTot:"Sur ce travail",wjSteelTot:"Acier",wjRopeTot:"Corde",wjOtherTot:"Autre",wjHist:"Matériel utilisé",wjNoMat:"Rien chargé sur ce travail.",wjPhoto:"Photo finie",wjPhotoH:"Prenez ou envoyez la photo du travail fini.",wjNeedPh:"Prenez ou envoyez une photo d'abord.",wjSavePh:"Enregistrer la photo",wjDone:"Fini",wjOpenJob:"Pas de photo",wjEx:"EXEMPLE",wjPcsU:"pièces",wjWhen:"Enregistré",wjStock:"Stock atelier",wjStockH:"Exemple seulement. Food n'est pas branché. Le stock arrive quand un transfert est accepté.",wjQueue:"Mettre un exemple Food en file",wjQueued:"En file",wjReceived:"Reçu",wjReceive:"Recevoir",wjOnHand:"En stock",wjNoneSt:"Pas encore de stock. Mettez un exemple en file, puis Recevoir.",wjAudit:"Historique du stock",wjShort:"Pas assez dans le stock atelier.",wjIn:"Entrée Food (exemple)",wjOut:"Utilisé sur un travail",wjHave:"En stock maintenant"});
+Object.assign(T.af,{wjTitle:"Werke",wjNew:"Nuwe werk",wjNone:"Nog geen werk nie. Tik Nuwe werk.",wjNoneF:"Geen werk van hierdie soort nie.",wjSample:"Net 'n voorbeeld. Staal, tou en die foto bly op hierdie werk.",wjAll:"Alles",wjBuild:"Bou",wjRepair:"Herstel",wjName:"Werknaam",wjNameH:"Werknaam",wjType:"Bou of herstel",wjNeed:"Tik die werknaam.",wjSave:"Stoor werk",wjSteel:"Voeg staal by",wjRope:"Voeg tou by",wjOther:"Voeg ander by",wjDesc:"Wat gebruik is",wjDescH:"Beskrywing",wjPcs:"Stukke",wjLen:"Lengte",wjUnit:"Eenheid",wjNeedDesc:"Tik wat gebruik is.",wjNeedPcs:"Tik hoeveel stukke.",wjNeedLen:"Tik die lengte.",wjBadNum:"Gebruik 'n nommer soos 2 of 12.5.",wjSaveM:"Stoor materiaal",wjTot:"Op hierdie werk",wjSteelTot:"Staal",wjRopeTot:"Tou",wjOtherTot:"Ander",wjHist:"Materiaal gebruik",wjNoMat:"Nog niks op hierdie werk nie.",wjPhoto:"Klaar foto",wjPhotoH:"Neem of laai die foto van die klaar werk.",wjNeedPh:"Neem of laai eers 'n foto.",wjSavePh:"Stoor foto",wjDone:"Klaar",wjOpenJob:"Nog geen foto nie",wjEx:"VOORBEELD",wjPcsU:"stukke",wjWhen:"Gestoor",wjStock:"Werkswinkel voorraad",wjStockH:"Net 'n voorbeeld. Food is nie gekoppel nie. Voorraad wys as 'n oordrag aanvaar is.",wjQueue:"Sit Food voorbeeld in die ry",wjQueued:"In die ry",wjReceived:"Ontvang",wjReceive:"Ontvang dit",wjOnHand:"Op hande",wjNoneSt:"Nog geen voorraad nie. Sit 'n voorbeeld in die ry, dan Ontvang dit.",wjAudit:"Voorraad storie",wjShort:"Nie genoeg in die werkswinkel voorraad nie.",wjIn:"In van Food (voorbeeld)",wjOut:"Gebruik op 'n werk",wjHave:"Nou op hande"});
+const WS={screen:"list",flt:"all",jobId:null,mat:null,type:"build",pendingPhoto:null,thumbs:{},err:""};
+function wNum(s){const t=String(s==null?"":s).trim().replace(/\s/g,"").replace(",",".");if(!t)return null;if(!/^\d+(\.\d+)?$/.test(t))return NaN;return +t}
+function wFmt(n){if(n==null||!isFinite(+n))return "";const r=Math.round(+n*1000)/1000;return String(r)}
+function wEx(r){return !!(r&&(r.example||/^example\b/i.test(String(r.name||r.desc||""))))}
+function wWhen(at){const d=new Date(at);if(!at||isNaN(d.getTime()))return "";const day=d.toDateString()===new Date().toDateString()?"":d.toLocaleDateString(dLoc(),{day:"numeric",month:"short"})+" ";return day+hm(d)}
+function wJob(id){return all("j").find(j=>j.id===id)||null}
+function wMats(id){return all("m").filter(m=>m.jobId===id).sort((a,b)=>String(b.at).localeCompare(String(a.at)))}
+function wPhotos(id){return all("p").filter(p=>p.jobId===id&&p.ph).sort((a,b)=>String(b.at).localeCompare(String(a.at)))}
+function wErr(msg){WS.err=msg||"";const e=$("wjErr");if(!e)return;e.textContent=WS.err;e.style.display=WS.err?"block":"none"}
+function wLenTxt(rows){const g={};rows.forEach(r=>{const n=+r.len||0;if(!n)return;const u=r.unit||"m";g[u]=(g[u]||0)+n});const ks=Object.keys(g);return ks.length?ks.map(u=>wFmt(g[u])+" "+u).join(" · "):""}
+function wPcsTxt(rows){const n=rows.reduce((s,r)=>s+(+r.qty||0),0);return n?wFmt(n)+" "+t("wjPcsU"):""}
+function wLine(rows){const a=wPcsTxt(rows),b=wLenTxt(rows);return [a,b].filter(Boolean).join(" · ")||"—"}
+function foldName(s){return String(s||"").trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ")}
+function wApplied(ref){if(!ref)return true;const h=all("hj").find(x=>x.id===ref);return !!(h&&h.status==="applied")}
+function wThou(k,q){const f=q?"qThou":"lThou";if(k[f]!=null&&isFinite(+k[f]))return +k[f];return Math.round(((q?+k.qty:+k.len)||0)*1000)}
+function wClass(u){u=String(u||"").toLowerCase();if(u==="m"||u==="cm"||u==="mm")return "len";if(u==="piece"||u==="pieces"||u==="pc"||u==="pcs")return "piece";return "other"}
+function wOn(mat,desc){let q=0,l=0;const want=foldName(desc);all("k").forEach(k=>{if(foldName(k.desc)!==want)return;if(k.dir==="in"&&!wApplied(k.ref))return;if(mat==="rope"){if(k.dir==="out"){l-=wThou(k,0);return}if(wClass(k.unit)==="len")l+=k.lThou!=null?+k.lThou:Math.round((+k.len||+k.qty||0)*1000);return}if(mat==="steel"){if(k.dir==="out"){q-=wThou(k,1);l-=wThou(k,0);return}if(wClass(k.unit)==="piece")q+=wThou(k,1);else if(wClass(k.unit)==="len")l+=k.lThou!=null?+k.lThou:Math.round((+k.len||+k.qty||0)*1000);return}if(k.dir==="out")q-=wThou(k,1);else q+=wThou(k,1)});return {qty:q/1000,len:l/1000}}
+addReport({id:"wjobs",title:{en:"Materials per job",fr:"Matériel par travail",af:"Materiaal per werk"},
+ cols:[{key:"date",label:{en:"Date",fr:"Date",af:"Datum"}},{key:"job",label:{en:"Job",fr:"Travail",af:"Werk"}},{key:"steel",label:{en:"Steel",fr:"Acier",af:"Staal"},num:true,sum:true},{key:"rope",label:{en:"Rope m",fr:"Corde m",af:"Tou m"},num:true,d:1,sum:true}],
+ rows:(f,to)=>{return all("j").filter(j=>{const d=j.at?ymd(new Date(j.at)):"";return d&&d>=f&&d<=to}).sort((a,b)=>String(a.at).localeCompare(String(b.at))).map(j=>{const ms=all("m").filter(m=>m.jobId===j.id);const steel=ms.filter(m=>m.mat==="steel").reduce((s,m)=>s+(+m.qty||0),0);const rope=ms.filter(m=>m.mat==="rope").reduce((s,m)=>s+(+m.len||0),0);return {date:ymd(new Date(j.at)),job:j.name||"",steel:steel,rope:Math.round(rope*10)/10}})}});
+function workHTML(u){
+  if(!canKind("j","view"))return `<div class="box"><p>${esc(t("noAccess"))}</p></div>`;
+  if(WS.screen==="jobform")return wJobForm(u);
+  if(WS.screen==="job")return wJobHTML(u);
+  if(WS.screen==="mat")return wMatForm(u);
+  if(WS.screen==="photo")return wPhotoHTML(u);
+  if(WS.screen==="stock")return wStockHTML(u);
+  return wListHTML(u);
+}
+function wListHTML(u){
+  const jobs=all("j").filter(j=>WS.flt==="all"||j.type===WS.flt).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  const flt=(k,lab)=>`<button type="button" class="sec${WS.flt===k?" on":""}" id="wjFlt${k}" data-flt="${k}">${esc(lab)}</button>`;
+  const row=j=>{const ms=wMats(j.id),done=wPhotos(j.id).length;return `<button type="button" class="uli wjOpen" data-job="${esc(j.id)}"><span class="ui">${j.type==="repair"?"🛠️":"🏗️"}</span><span class="ut"><span class="n">${esc(j.name)}</span><small>${esc(j.type==="repair"?t("wjRepair"):t("wjBuild"))}${wEx(j)?" · "+esc(t("wjEx")):""} · ${esc(done?t("wjDone"):t("wjOpenJob"))} · ${esc(wWhen(j.at))}</small><small>${esc(t("wjSteelTot"))}: ${esc(wLine(ms.filter(m=>m.mat==="steel")))} · ${esc(t("wjRopeTot"))}: ${esc(wLine(ms.filter(m=>m.mat==="rope")))}</small></span><span class="ch">›</span></button>`};
+  return `<div class="box" id="wjList"><h2>🔧 ${esc(t("wjTitle"))}</h2><p class="hint">${esc(t("wjSample"))}</p>
+  <div class="rpBar" id="wjFlt">${flt("all",t("wjAll"))}${flt("build",t("wjBuild"))}${flt("repair",t("wjRepair"))}</div>
+  <button type="button" id="wjStock">${esc(t("wjStock"))}</button>
+  ${canKind("j","add")?`<button type="button" id="wjNew">${esc(t("wjNew"))}</button>`:""}
+  ${jobs.length?jobs.map(row).join(""):`<p class="hint" id="wjEmpty">${esc(WS.flt==="all"?t("wjNone"):t("wjNoneF"))}</p>`}</div>`;
+}
+function wJobForm(u){
+  return `<div class="box" id="wjForm"><h2>${esc(t("wjNew"))}</h2>
+  <label for="wjName">${esc(t("wjName"))}</label><input id="wjName" data-draft="wjName" type="text" autocomplete="off" spellcheck="true" autocapitalize="words" placeholder="${esc(t("wjNameH"))}">
+  <p class="hint">${esc(t("wjType"))}</p><div class="rpBar"><button type="button" class="sec${WS.type==="build"?" on":""}" id="wjTyB">${esc(t("wjBuild"))}</button><button type="button" class="sec${WS.type==="repair"?" on":""}" id="wjTyR">${esc(t("wjRepair"))}</button></div>
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p><p class="hint" id="drNote" style="display:none">${esc(t("draft"))}</p>
+  <button type="button" id="wjSave">${esc(t("wjSave"))}</button></div>`;
+}
+function wJobHTML(u){
+  const j=wJob(WS.jobId);if(!j){WS.screen="list";WS.jobId=null;return wListHTML(u)}
+  const ms=wMats(j.id),ph=wPhotos(j.id)[0],st=ms.filter(m=>m.mat==="steel"),rp=ms.filter(m=>m.mat==="rope"),ot=ms.filter(m=>m.mat==="other");
+  const row=m=>`<div class="urow wjRow" data-mid="${esc(m.id)}"><span class="n">${esc(m.desc)}</span><span class="hint">${esc(wWhen(m.at))} · ${esc(m.mat==="steel"?t("wjSteelTot"):m.mat==="rope"?t("wjRopeTot"):t("wjOtherTot"))}${wEx(m)?" · "+esc(t("wjEx")):""}${m.qty?esc(" · "+wFmt(m.qty)+" "+t("wjPcsU")):""}${m.len?esc(" · "+wFmt(m.len)+" "+(m.unit||"m")):""}</span>${fixBtn("m",m.id,"desc")}${fixedNote(m)}</div>`;
+  return `<div class="box" id="wjJob"><h2>${esc(j.name)}</h2><p><b>${esc(j.type==="repair"?t("wjRepair"):t("wjBuild"))}</b>${wEx(j)?" · "+esc(t("wjEx")):""} · ${esc(ph?t("wjDone"):t("wjOpenJob"))}</p><p class="hint">${esc(t("wjWhen"))}: ${esc(wWhen(j.at))} · ${esc(j.by||"")}</p>${fixBtn("j",j.id,"name")}${fixedNote(j)}</div>
+  <div class="box" id="wjPicBox"><h3>${esc(t("wjPhoto"))}</h3>${ph?wPic(ph.ph):`<p class="hint">${esc(t("wjOpenJob"))}</p>`}${phBtn(ph&&ph.ph)}${canKind("p","add")?`<button type="button" id="wjOpenPh">${esc(t("wjPhoto"))}</button>`:""}</div>
+  <div class="box" id="wjTot"><h3>${esc(t("wjTot"))}</h3><p><b>${esc(t("wjSteelTot"))}</b> ${esc(wLine(st))}</p><p><b>${esc(t("wjRopeTot"))}</b> ${esc(wLine(rp))}</p><p><b>${esc(t("wjOtherTot"))}</b> ${esc(ot.length?wLine(ot):"—")}</p></div>
+  <div class="box" id="wjHist"><h3>${esc(t("wjHist"))}</h3>${ms.length?ms.map(row).join(""):`<p class="hint">${esc(t("wjNoMat"))}</p>`}
+  ${canKind("m","add")?`<button type="button" id="wjAddSteel">${esc(t("wjSteel"))}</button><button type="button" class="sec" id="wjAddRope">${esc(t("wjRope"))}</button><button type="button" class="sec" id="wjAddOther">${esc(t("wjOther"))}</button>`:""}</div>`;
+}
+function wPic(ph){const st="max-height:96px;width:100%;object-fit:contain;background:#f8fafc";const src=WS.thumbs[ph];if(src)return `<img id="wjPic" class="phPrev" alt="" style="${st}" src="${esc(src)}">`;return `<img id="wjPic" class="phPrev" alt="" data-phid="${esc(ph)}" style="display:none;${st}">`}
+function wHand(mat){const seen={},rows=[];all("k").forEach(k=>{if(k.mat!==mat||k.dir!=="in"||!wApplied(k.ref))return;const key=foldName(k.desc);if(seen[key])return;seen[key]=1;const b=wOn(mat,k.desc);rows.push(`<p><b>${esc(k.desc)}</b> ${esc(wFmt(b.qty))} ${esc(t("wjPcsU"))} · ${esc(wFmt(b.len))} m</p>`)});return rows.join("")||`<p class="hint">0</p>`}
+function wStockHTML(u){
+  const hs=all("hj").slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
+  const ks=all("k").filter(k=>k.dir!=="in"||wApplied(k.ref)).slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
+  const hold=[];all("k").forEach(k=>{if(k.dir!=="in"||!wApplied(k.ref))return;const bits=[];if(+k.qty)bits.push(wFmt(k.qty)+" "+(wClass(k.unit)==="piece"?t("wjPcsU"):(k.unit||"")));if(+k.len)bits.push(wFmt(k.len)+" "+(k.unit||"m"));hold.push(`<p><b>${esc(k.desc)}</b> ${esc(bits.join(" · "))} · ${esc(t("wjEx"))}</p>`)});
+  const aud=k=>{const j=k.jobId?wJob(k.jobId):null;const bits=[];if(+k.qty)bits.push(wFmt(k.qty)+" "+(wClass(k.unit)==="piece"?t("wjPcsU"):(k.unit||"")));if(+k.len)bits.push(wFmt(k.len)+" "+(k.unit||"m"));return `<div class="urow wjAud"><span class="n">${esc(k.dir==="out"?t("wjOut"):t("wjIn"))}</span><span class="hint">${esc(wWhen(k.at))} · ${esc(k.desc)} · ${esc(bits.join(" · "))}${j?" · "+esc(j.name):""}</span></div>`};
+  return `<div class="box" id="wjStockBox"><h2>${esc(t("wjStock"))}</h2><p class="hint">${esc(t("wjStockH"))}</p><h3>${esc(t("wjOnHand"))}</h3><div id="wjOnHand">${hold.length?hold.join(""):`<p class="hint">${esc(t("wjNoneSt"))}</p>`}</div><h3>${esc(t("wjReceived"))}</h3>${hs.length?hs.map(h=>`<div class="urow wjTr" data-ref="${esc(h.id)}"><span class="n">${esc(h.id)}</span><span class="st">${esc(h.status==="applied"?t("wjReceived"):t("wjQueued"))}</span><span class="hint">${esc(wWhen(h.at))} · fi</span></div>`).join(""):`<p class="hint">${esc(t("wjNoneSt"))}</p>`}<h3>${esc(t("wjAudit"))}</h3><div id="wjAudit">${ks.length?ks.map(aud).join(""):`<p class="hint">—</p>`}</div></div>`;
+}
+function wMatForm(u){
+  const lab=WS.mat==="rope"?t("wjRope"):WS.mat==="other"?t("wjOther"):t("wjSteel");
+  const lenPh=WS.mat==="rope"?"12.5":"";
+  return `<div class="box" id="wjMat"><h2>${esc(lab)}</h2><div id="wjHave"><p class="hint">${esc(t("wjHave"))}</p>${wHand(WS.mat||"steel")}</div>
+  <label for="wjDesc">${esc(t("wjDesc"))}</label><textarea id="wjDesc" rows="2" data-draft="wjDesc" autocomplete="off" spellcheck="true" placeholder="${esc(t("wjDescH"))}"></textarea>
+  <label for="wjPcs">${esc(t("wjPcs"))}</label><input id="wjPcs" data-draft="wjPcs" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${WS.mat==="steel"?"2":"1"}">
+  <label for="wjLen">${esc(t("wjLen"))}</label><input id="wjLen" data-draft="wjLen" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${esc(lenPh)}">
+  <label for="wjUnit">${esc(t("wjUnit"))}</label><select id="wjUnit"><option value="m">m</option><option value="cm">cm</option><option value="mm">mm</option></select>
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p><p class="hint" id="drNote" style="display:none">${esc(t("draft"))}</p>
+  <button type="button" id="wjSaveM">${esc(t("wjSaveM"))}</button></div>`;
+}
+function wPhotoHTML(u){
+  const ph=wPhotos(WS.jobId)[0];
+  const src=WS.pendingPhoto||(ph&&WS.thumbs[ph.ph])||"";
+  return `<div class="box" id="wjPhoto"><h2>${esc(t("wjPhoto"))}</h2><p class="hint">${esc(t("wjPhotoH"))}</p>
+  ${src?`<img id="wjPic" class="phPrev" alt="" style="max-height:220px;width:100%;object-fit:contain;background:#f8fafc" src="${esc(src)}">`:ph?wPic(ph.ph):`<img id="wjPic" class="phPrev" alt="" style="display:none">`}
+  ${photoHTML("wjPhPick")}<p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p>
+  <button type="button" id="wjSavePh">${esc(t("wjSavePh"))}</button></div>`;
+}
+function wGo(screen,extra){WS.err="";WS.screen=screen;if(extra)Object.assign(WS,extra);render()}
+function bindWork(u){
+  wsNav();
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  document.querySelectorAll("[data-flt]").forEach(b=>b.onclick=()=>{WS.flt=b.dataset.flt;render()});
+  document.querySelectorAll(".wjOpen").forEach(b=>b.onclick=()=>wGo("job",{jobId:b.dataset.job}));
+  on("wjNew",()=>wGo("jobform",{type:"build"}));
+  on("wjTyB",()=>{WS.type="build";render()});on("wjTyR",()=>{WS.type="repair";render()});
+  on("wjSave",()=>wSaveJob(u));
+  on("wjAddSteel",()=>wGo("mat",{mat:"steel"}));on("wjAddRope",()=>wGo("mat",{mat:"rope"}));on("wjAddOther",()=>wGo("mat",{mat:"other"}));
+  on("wjSaveM",()=>wSaveMat(u));
+  on("wjStock",()=>wGo("stock"));
+  on("wjOpenPh",()=>{WS.pendingPhoto=null;wGo("photo")});
+  on("wjSavePh",()=>wSavePh(u));
+  bindPhoto("wjPhPick",d=>{WS.pendingPhoto=d;const im=$("wjPic");if(im){im.src=d;im.style.display="block"}else render();wErr("")});
+  const im=$("wjPic");if(im&&im.dataset.phid){const id=im.dataset.phid;phQ.get(id).then(o=>{if(o&&o.d){WS.thumbs[id]=o.d;const e=$("wjPic");if(e){e.src=o.d;e.style.display="block"}}}).catch(()=>{})}
+  bindFix();
+}
+function wSaveJob(u){
+  const name=$("wjName").value.trim();if(!name){wErr(t("wjNeed"));return}
+  if(WS.type!=="build"&&WS.type!=="repair"){wErr(t("wjType"));return}
+  const id="j"+Date.now();
+  const data={id:id,name:name,type:WS.type,by:u.name,at:new Date().toISOString(),example:wEx({name:name})?1:0};
+  if(put("j",id,data)===false)return;
+  draftClear("wjName");afterSave(true);
+}
+function wSaveMat(u){
+  const desc=$("wjDesc").value.trim();if(!desc){wErr(t("wjNeedDesc"));return}
+  const qty=wNum($("wjPcs").value),len=wNum($("wjLen").value);
+  if(Number.isNaN(qty)||Number.isNaN(len)){wErr(t("wjBadNum"));return}
+  const mat=WS.mat||"other";
+  if(mat==="steel"&&!(qty>0)){wErr(t("wjNeedPcs"));return}
+  if(mat==="rope"&&!(len>0)){wErr(t("wjNeedLen"));return}
+  if(mat==="other"&&!(qty>0)&&!(len>0)){wErr(t("wjNeedPcs"));return}
+  const unit=$("wjUnit").value||"m",needQ=qty>0?qty:0,needL=len>0?len:0,bal=wOn(mat,desc);
+  if((needQ>0&&needQ-bal.qty>1e-9)||(needL>0&&needL-bal.len>1e-9)){wErr(t("wjShort"));return}
+  const id="m"+Date.now(),at=new Date().toISOString();
+  const data={id:id,jobId:WS.jobId,mat:mat,desc:desc,qty:needQ,len:needL,unit:unit,by:u.name,at:at,example:wEx({desc:desc})?1:0};
+  if(put("m",id,data)===false)return;
+  const kid="kout"+id;
+  if(put("k",kid,{id:kid,ref:"",dir:"out",mat:mat,desc:desc,qty:needQ,len:needL,unit:unit,qThou:Math.round(needQ*1000),lThou:Math.round(needL*1000),at:at,by:u.name,jobId:WS.jobId,example:data.example})===false)return;
+  draftClear("wjDesc");draftClear("wjPcs");draftClear("wjLen");afterSave(true);
+}
+function wSavePh(u){
+  const had=wPhotos(WS.jobId).length;
+  if(!WS.pendingPhoto&&!had){wErr(t("wjNeedPh"));return}
+  if(WS.pendingPhoto){
+    const job=wJob(WS.jobId)||{};
+    const ph=phKeep(WS.pendingPhoto,String(job.name||"job").slice(0,80));
+    WS.thumbs[ph]=WS.pendingPhoto;
+    const id="p"+Date.now();
+    if(put("p",id,{id:id,jobId:WS.jobId,ph:ph,by:u.name,at:new Date().toISOString(),example:wEx(job)?1:0})===false)return;
+    WS.pendingPhoto=null;
+  }
+  afterSave(true);
+}
+function wsNav(){
+  if(wsNav.done||!window.TMC.nav)return;wsNav.done=1;const N=window.TMC.nav;
+  N.keys.push(o=>{if(o.t==="work"){o.sc=WS.screen;o.ji=WS.jobId||"";o.mt=WS.mat||""}return o});
+  N.sets.push(o=>{if(o.sc){WS.screen=o.sc;WS.jobId=o.ji||null;WS.mat=o.mt||null;WS.pendingPhoto=null}});
+  N.ups.push(()=>{if(tab!=="work")return false;let to=null;if(WS.screen==="mat"||WS.screen==="photo")to="job";else if(WS.screen==="job"||WS.screen==="jobform"||WS.screen==="stock")to="list";else return false;WS.screen=to;WS.mat=null;WS.pendingPhoto=null;if(to==="list")WS.jobId=null;N.st=N.st.filter(k=>{try{const o=JSON.parse(k);return !(o.t==="work"&&o.sc&&o.sc!=="list")}catch(e){return true}});return true});
+  N.dirty.push(()=>tab==="work"&&WS.screen==="photo"&&!!WS.pendingPhoto);
+  N.clear.push(()=>{WS.pendingPhoto=null});
+}
+window.TMC.ws=()=>WS;window.TMC.wBal=(mat,desc)=>wOn(mat,desc);window.TMC.wOn=wOn;
+/* ==================== APP FEATURES END ==================== */
+function canHTML(u){
+  if(u.admin)return `<div class="box"><h2>✅ ${esc(t("can"))}</h2><p><b>${esc(t("canAll"))}</b></p></div>`;
+  return `<div class="box" id="canBox"><h2>✅ ${esc(t("can"))}</h2><p class="hint">${esc(t("canH"))}</p>${(C.PERMS||[]).map(p=>`<div class="canR ${can(p.id,u)?"yes":"no"}" data-cp="${esc(p.id)}"><span class="ci">${can(p.id,u)?"✅":"⬜"}</span><span>${esc(p.icon)} ${esc(permLab(p))}</span></div>`).join("")}<p class="hint">${esc(t("canAdm"))}</p></div>`;
+}
+function permTicks(u){
+  if(u.admin||u.status!=="active"&&u.status!=="pending")return "";
+  const lk=k=>`<div class="permT lock"><span>${esc(t(k))}<small> · ⭐ ${esc(t("admOnly"))}</small></span><span style="flex:none;font-size:24px">🔒</span></div>`;
+  return `<div class="permBox" data-pu="${esc(u.id)}"><div class="hint">${esc(t("canEd"))} ${esc(u.name)}:</div>${(C.PERMS||[]).map(p=>`<label class="permT${permsOf(u).indexOf(p.id)>=0?" on":""}"><span>${esc(p.icon)} ${esc(permLab(p))}</span><input type="checkbox" data-pu="${esc(u.id)}" data-pp="${esc(p.id)}"${permsOf(u).indexOf(p.id)>=0?" checked":""}></label>`).join("")}${lk("lkFix")}${lk("lkApp")}</div>`;
+}
+let openU=null; // Admin users list: which person is open (list form like Purchases)
+function usersHTML(me_){
+  const U=users(),lab={pending:t("pend"),active:t("act"),rejected:t("rej"),blocked:t("blk")};
+  const sum=u=>u.admin?"⭐ "+t("admin"):((C.PERMS||[]).filter(p=>can(p.id,u)).map(p=>p.icon+" "+permLab(p)).join(" · ")||"—");
+  const ico={pending:"⏳",active:"🟢",rejected:"⛔",blocked:"🚫"};
+  const row=u=>{const o=openU===u.id||u.status==="pending";return `<div class="urow ulr" data-uid="${esc(u.id)}" style="display:block;padding:0;border:0"><button type="button" class="uli" data-open="${esc(u.id)}"><span class="ui">${ico[u.status]||"👤"}</span><span class="ut"><span class="n">${esc(u.name)}</span> <span class="st ${esc(u.status)}">${esc(lab[u.status]||u.status)}</span><small>${esc(sum(u))}</small></span><span class="ch">${o?"⌄":"›"}</span></button>${o?`<div class="uopen"><div class="acts">
+   ${u.status==="pending"?`<button type="button" class="sm" data-ua="approve" data-id="${esc(u.id)}">${esc(t("approve"))}</button>${isMain(u)?"":`<button type="button" class="sm red" data-ud="reject" data-id="${esc(u.id)}">${esc(t("reject"))}</button>`}`:""}
+   ${u.status==="active"&&u.id!==me_.id&&!isMain(u)?`<button type="button" class="sm red" data-ud="block" data-id="${esc(u.id)}">${esc(t("block"))}</button>`:""}
+   ${(u.status==="blocked"||u.status==="rejected")&&!isMain(u)?`<button type="button" class="sm red" data-ud="${u.status==="blocked"?"block":"reject"}" data-id="${esc(u.id)}">${esc(t("dscOld"))}</button>`:""}
+   ${u.status==="active"&&(u.pinH||u.hasPin)&&u.id!==me_.id?`<button type="button" class="sm sec" data-ua="reset" data-id="${esc(u.id)}">${esc(t("resetPin"))}</button>`:""}</div>${permTicks(u)}</div>`:""}</div>`};
+  const pend=U.filter(u=>u.status==="pending"),rest=U.filter(u=>u.status!=="pending").sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  return `<div class="box"><h3>⏳ ${esc(t("pend"))}</h3>${pend.length?pend.map(row).join(""):`<p class="hint">${esc(t("noPend"))}</p>`}</div><div class="box"><h3>👥 ${esc(t("users"))}</h3>${rest.map(row).join("")}</div>`;
+}
+/* VER 7 (Johan 31 Oct 2026): Block / Reject = DISCARD. The user record is taken off the phone and the Sheet (server checks Admin token,
+   never the signed-in Admin, never the last Admin) and its old PIN/token stop working. The person may send a fresh request later (→ Pending). */
+function discardWhy(u){if(isMain(u))return "dscMain";const m=me();if(!m||!m.admin)return "dscTok";if(u.id===m.id)return "dscSelf";
+  if(u.admin&&!users().some(x=>x.id!==u.id&&x.admin&&x.status==="active"))return "dscLast";if(!canFix())return "dscTok";return ""}
+/* Main Admin = an APPROVED Admin whose name key is ADMIN_ALIASES[0] (jakirsten) or any ADMIN_ALIASES name: never removed, blocked, demoted or renamed away
+   (Reset PIN still allowed). A pending request using an alias is NOT protected, so it can still be rejected. */
+function isMain(u){return !!u&&!!u.admin&&u.status==="active"&&NK(u.name)===ADMIN_KEY}
+function mainKept(d){return !!d&&!!d.admin&&d.status==="active"&&NK(d.name)===ADMIN_KEY}
+function discardUser(id){const u=users().find(x=>x.id===id);if(!u)return false;const w=discardWhy(u);if(w){toast(t(w));return false}
+  const k="u:"+id;R[k]={kind:"u",id:String(id),u:Math.max(Date.now(),R[k]?R[k].u+1:0),del:1,data:{discarded:1,at:new Date().toISOString()}};dirty[k]=1;saveR();syncSoon();
+  if(openU===id)openU=null;toast(t("dscDone").replace("%n",u.name));render();return true}
+window.TMC.discardUser=discardUser;window.TMC.discardWhy=discardWhy;window.TMC.isMain=isMain;
+function discardModal(id,why,again){const u=users().find(x=>x.id===id);if(!u)return;const w=discardWhy(u);
+  if(w==="dscTok"&&!again&&me()&&me().admin&&!sTok()){relogNo=0;return Promise.resolve(syncNow()).then(()=>discardModal(id,why,1),()=>discardModal(id,why,1))}  // Admin token missing: fetch one first
+  if(w)return toast(t(w));
+  const m=document.createElement("div");m.className="modal";m.id="dscM";
+  m.innerHTML=`<div class="card dsc"><h2>${esc(t(why==="reject"?"dscRT":"dscBT").replace("%n",u.name))}</h2><p class="hint" style="font-size:18px">${esc(t("dscH").replace("%n",u.name))}</p><button type="button" class="red" id="dscY">${esc(t("dscY"))}</button><button type="button" class="sec" id="dscN">${esc(t("dscN"))}</button></div>`;
+  document.body.appendChild(m);const x=()=>m.remove();$("dscN").onclick=x;m.onclick=e=>{if(e.target===m)x()};$("dscY").onclick=()=>{x();discardUser(id)}}
+function bindUsers(){
+  document.querySelectorAll("[data-ud]").forEach(b=>b.onclick=()=>discardModal(b.dataset.id,b.dataset.ud));
+  document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{openU=openU===b.dataset.open?null:b.dataset.open;render()});
+  document.querySelectorAll("[data-ua]").forEach(b=>b.onclick=()=>{
+    const u=Object.assign({},users().find(x=>x.id===b.dataset.id));if(!u.id)return;const a=b.dataset.ua;
+    if(a==="approve"||a==="unblock")u.status="active";if(a==="reject")u.status="rejected";if(a==="block")u.status="blocked";
+    if(a==="reset"){delete u.pinH;delete u.salt;delete u.hasPin;u.pinReset=Date.now()}
+    if(a==="approve"&&!Array.isArray(u.perms))u.perms=(C.PERM_DEFAULT||[]).slice();
+    put("u",u.id,u);render()});
+  document.querySelectorAll("input[data-pp]").forEach(b=>b.onchange=()=>{
+    const u=Object.assign({},users().find(x=>x.id===b.dataset.pu));if(!u.id||u.admin)return;
+    const s=new Set(permsOf(u));if(b.checked)s.add(b.dataset.pp);else s.delete(b.dataset.pp);
+    u.perms=(C.PERMS||[]).map(p=>p.id).filter(id=>s.has(id));put("u",u.id,u);render()});
+}
+function settingsHTML(u){
+  const lo=+(L.get("lastOk")||0);
+  return `<div class="box"><h3>🌐 ${esc(t("lang"))}</h3>${langBtns()}</div>
+  <div class="box"><h3>🔄 ${esc(t("sync"))}</h3><p class="hint" id="sLine"></p><p class="hint">${esc(t("last"))}: ${lo?esc(new Date(lo).toLocaleDateString(dLoc(),{day:"numeric",month:"short",year:"numeric"})+" "+hm(new Date(lo))):"—"}</p><button type="button" id="hSync">${esc(t("syncNow"))}</button>
+  ${u.admin?`<label class="hint">${esc(t("syncUrl"))}</label><div class="pw"><input id="sUrl" class="msk" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" name="${C.APP_ID}-su" value="${esc(sUrl())}"><button type="button" class="eye" data-eye="sUrl">👁</button></div>
+  <label class="hint">${esc(t("syncCode"))}</label><div class="pw"><input id="sCode" class="msk" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" name="${C.APP_ID}-sc" value="${esc(sCode())}"><button type="button" class="eye" data-eye="sCode">👁</button></div>
+  <button type="button" class="sec" id="sSave">${esc(t("save"))}</button>`:""}</div>
+  <div class="box"><h3>ℹ️ ${esc(t("ver"))} ${C.VER}</h3><button type="button" class="sec" id="uChk">${esc(t("updChk"))}</button><p class="hint" id="uMsg"></p></div>
+  <div class="box"><button type="button" class="sec" id="hShare">📤 ${esc(t("share"))}</button>${insHTML()}<button type="button" class="sec loBand" id="sOut">${esc(t("logout"))}</button><button type="button" class="sec" id="sWipe">${esc(t("wipe"))}</button></div>`;
+}
+function bindMain(u){
+  {const hl=$("hLang");if(hl)hl.onchange=()=>{lang=hl.value;L.set("lang",lang);render()}}
+  bindCommon();
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  on("hSync",()=>syncNow());on("hShare",shareModal);
+  on("sSave",()=>{relogNo=0;L.set("syurl",$("sUrl").value.trim());L.set("sycode",$("sCode").value.trim());L.del("since");syncNow().then(render)});
+  on("uChk",()=>checkUpdate(true));
+  on("sOut",logout);on("hOut",logout);on("sWipe",wipe);
+  if(tab==="work")bindWork(u);if(tab==="reports")bindRep(u);if(tab==="users")bindUsers();
+  draftBind(u);
+}
+async function logout(){
+  const u=me();if(!u)return;
+  if(pending()&&sUrl()&&navigator.onLine)await syncNow();
+  const n=pending();
+  if(!confirm(n?t("logoutPend").replace("%n",n):t("logoutQ").replace("%n",u.name)))return;
+  signOut();tab="home";render();
+}
+async function wipe(){
+  if(pending()&&sUrl()&&navigator.onLine)await syncNow();
+  const n=pending();if(!confirm(n?t("wipePend").replace("%n",n):t("wipeQ")))return;
+  await wipeThisApp();location.reload();
+}
+// Deletes ONLY this app's keys, caches and service worker. Other TMC apps are untouched.
+async function wipeThisApp(){
+  try{if(phDbP){(await phDbP).close();phDbP=null}await new Promise(r=>{const q=indexedDB.deleteDatabase(P+"photos");q.onsuccess=q.onerror=q.onblocked=()=>r()})}catch(e){}  // VER 9: only THIS app's photo queue
+  Object.keys(localStorage).filter(k=>k.indexOf(P)===0).forEach(k=>localStorage.removeItem(k));
+  try{const ks=await caches.keys();await Promise.all(ks.filter(k=>k.indexOf(CACHE_PREFIX)===0).map(k=>caches.delete(k)))}catch(e){}
+  try{const rg=await navigator.serviceWorker.getRegistration("./");if(rg&&new URL(rg.scope).href===new URL("./",location.href).href)await rg.unregister()}catch(e){}
+}
+window.TMC.wipeThisApp=wipeThisApp;
+
+/* ---------------- Drafts ---------------- */
+const dKey=(u,k)=>"draft_"+NK(u.name)+"_"+k;
+function draftBind(u){document.querySelectorAll("[data-draft]").forEach(el=>{const k=dKey(u,el.dataset.draft),v=L.get(k);if(v&&!el.value){el.value=v;const n=$("drNote");if(n)n.style.display="block"}
+  el.addEventListener("input",()=>{if(el.value)L.set(k,el.value);else L.del(k)})})}
+function draftClear(k){const u=me();if(u)L.del(dKey(u,k))}
+window.TMC.draftClear=draftClear;
+
+/* ---------------- Sync status + unsynced warning ---------------- */
+let pendSince=0;
+function paintNc(){const w=$("ncW");if(!w)return;const off=!sUrl(),show=off||netBad;w.style.display=show?"block":"none";if(!show)return;
+  w.innerHTML=`<b>${esc(t("ncT"))}</b><span>${esc(off?t("ncOff"):t("ncH"))}</span>${off?"":`<button type="button" id="ncB">${esc(t("retry"))}</button>`}`;
+  const b=$("ncB");if(b)b.onclick=()=>{if(syncOn())syncNow();else api({action:"status",name:"x"}).catch(()=>{})}}
+function paintSync(){paintNc();
+  const d=$("sDot");if(d)d.className="dot "+(!syncOn()?"":sState==="busy"?"busy":sState==="err"||!navigator.onLine?"err":sState==="ok"?"ok":"");
+  const tm=$("sTime");if(tm){const lo=+(L.get("lastOk")||0),d0=new Date(lo);tm.textContent=lo?(new Date().toDateString()===d0.toDateString()?hm(d0):d0.toLocaleDateString(dLoc(),{day:"numeric",month:"short"})+" "+hm(d0)):"—"}
+  const s=$("sLine");if(s)s.textContent=!syncOn()?t("syncOff"):!navigator.onLine?t("offline"):sState==="err"?t("syncErr"):t("synced");
+  const w=$("pendW");if(!w)return;const n=sUrl()?pending():0;
+  if(!n){pendSince=0;w.style.display="none";return}if(!pendSince)pendSince=Date.now();
+  const show=!navigator.onLine||sState==="err"||Date.now()-pendSince>6000;w.style.display=show?"block":"none";if(!show)return;
+  w.innerHTML=`${esc(t("pwT").replace("%n",n))}${navigator.onLine?"":`<small>${esc(t("pwOff"))}</small>`}<small>${esc(t("pwDel"))}</small><button type="button" id="pwB">${esc(t("syncNow"))}</button>`;
+  $("pwB").onclick=()=>syncNow();
+}
+setInterval(paintSync,2000);addEventListener("online",paintSync);addEventListener("offline",paintSync);
+/* VER 6: small plain message at the bottom (no OK button) */
+function toast(m){let w=$("tmcToast");if(!w){w=document.createElement("div");w.id="tmcToast";w.setAttribute("role","status");w.style.cssText="position:fixed;left:12px;right:12px;bottom:84px;z-index:9999;background:#7c2d12;color:#fff;padding:14px 16px;border-radius:12px;font-size:17px;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.3);text-align:center";document.body.appendChild(w)}w.textContent=m;w.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>{w.style.display="none"},7000)}
+window.TMC.toast=toast;
+function onData(){const u=me();if(flow&&flow.s==="wait"&&!u){/* stay */}if(!u&&L.get("uid")){signOut();render();return}
+  const a=document.activeElement;if(u&&!formDirty&&!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA")))render()}
+
+/* ---------------- Auto-update (service worker) ----------------
+   VER 11: on open and on coming back to the foreground the app checks for a new version. If one is found it
+   locks saves (put() refuses), shows a full-screen "Updating… please wait", activates the new worker and reloads.
+   Offline / check fails: nothing happens, the app works normally, it tries again next open. Saved records live in
+   localStorage / IndexedDB (APP_ID_ keys), so a reload never loses unsynced work. */
+let reg=null,updReady=false,updLock=false,updT0=0;
+function paintUpd(){const w=$("updW");if(!w)return;w.style.display=updReady?"block":"none";if(updReady){w.innerHTML=`${esc(t("updT"))}<button type="button" id="updB">${esc(t("updB"))}</button>`;$("updB").onclick=applyUpdate}}
+function updScreen(on){let o=$("updGo");if(!on){if(o)o.remove();return}if(!o){o=document.createElement("div");o.id="updGo";o.setAttribute("role","alert");document.body.appendChild(o)}
+  o.innerHTML=`<img src="icons/icon-192.png" alt=""><i></i><b>${esc(t("updGo"))}</b><span>${esc(t("updGo2"))}</span>`}
+function updOn(){if(updLock)return;updLock=true;updT0=Date.now();try{const a=document.activeElement;if(a&&a.blur)a.blur()}catch(e){}updScreen(1);
+  setTimeout(()=>{if(updLock&&!(reg&&reg.waiting)&&Date.now()-updT0>=45000)updOff()},45000)}   // download stuck: let staff work, retry next open
+function updOff(){updLock=false;updScreen(0)}
+function applyUpdate(){updOn();if(reg&&reg.waiting)reg.waiting.postMessage("skip");else location.reload();setTimeout(()=>location.reload(),8000)}
+function checkUpdate(manual){if(!reg)return;reg.update().then(()=>{if(manual){const m=$("uMsg");if(m)m.textContent=reg.waiting||reg.installing?t("updT"):t("updNone")}}).catch(()=>{})}
+window.TMC.checkUpdate=checkUpdate;window.TMC.updLock=()=>updLock;
+if("serviceWorker" in navigator&&location.protocol!=="file:"){
+  let reloading=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(reloading)return;reloading=true;location.reload()});
+  const hook=r=>{if(!r||reg)return;reg=r;   // ready answers at once when installed; register() can wait for the network
+    const watch=w=>{if(!w||!navigator.serviceWorker.controller)return;updOn();w.addEventListener("statechange",()=>{if(w.state==="installed"){updReady=true;paintUpd();applyUpdate()}else if(w.state==="redundant"&&!r.waiting)updOff()})};
+    if(r.waiting&&navigator.serviceWorker.controller){updReady=true;applyUpdate()}
+    else{watch(r.installing);checkUpdate()}
+    r.addEventListener("updatefound",()=>watch(r.installing));
+    setInterval(()=>checkUpdate(),30*60000)};
+  if(navigator.serviceWorker.controller)navigator.serviceWorker.ready.then(r=>{if(new URL(r.scope).href===new URL("./",location.href).href)hook(r)}).catch(()=>{});
+  navigator.serviceWorker.register("sw.js",{scope:"./"}).then(hook).catch(e=>console.warn("sw",e));  // folder only: /tmc-workshop/ on GitHub Pages, never the whole site
+}
+
+/* ---------------- Install button + iPhone hint ---------------- */
+let bip=null;
+const typing=()=>{const a=document.activeElement;return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA")&&a.value)};
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();bip=e;if(!typing())render()});
+addEventListener("appinstalled",()=>{bip=null;render()});
+const standalone=()=>(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+const isIos=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+function insHTML(){if(standalone())return "";if(bip)return `<button type="button" class="insB">${esc(t("insBtn"))}</button>`;if(isIos())return `<div class="insH">${esc(t("insIos"))}</div>`;return ""}
+function bindIns(){document.querySelectorAll(".insB").forEach(b=>b.onclick=async()=>{if(!bip)return;bip.prompt();try{await bip.userChoice}catch(e){}bip=null;render()})}
+
+/* ---------------- Share app + QR ---------------- */
+function shareModal(){
+  const url=C.SHARE_URL||new URL("./",location.href).href;
+  const m=document.createElement("div");m.className="modal";
+  m.innerHTML=`<div class="card"><h2>📤 ${esc(t("share"))}</h2>${C.SHARE_URL?`<img class="qr" src="icons/qr.png" alt="QR">`:""}<p class="hint">${esc(t("shareH"))}</p><p style="word-break:break-all"><b>${esc(url)}</b></p>
+  ${navigator.share?`<button type="button" id="shS">${esc(t("shareB"))}</button>`:""}<button type="button" class="sec" id="shC">${esc(t("copy"))}</button><button type="button" class="sec" id="shX">${esc(t("close"))}</button></div>`;
+  document.body.appendChild(m);
+  const x=()=>m.remove();$("shX").onclick=x;m.onclick=e=>{if(e.target===m)x()};
+  if($("shS"))$("shS").onclick=()=>navigator.share({title:C.NAME,url:url}).catch(()=>{});
+  $("shC").onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>{$("shC").textContent=t("copied")})}catch(e){}};
+}
+
+/* VER 10 BACK: a big "← Back" bar at the TOP of every screen except Home (staff-friendly).
+   Order: 1) one level up inside the screen (report → report list, app hooks), 2) the screen's own top Back
+   button if it has one (kept, made big), 3) the previous screen, 4) Home. A half-filled form asks
+   "Leave without saving?" Yes / No first. Bottom tabs are unchanged. Apps extend window.TMC.nav. */
+Object.assign(T.en,{navBack:"← Back",navLeave:"Leave without saving?",navYes:"Yes",navNo:"No"});
+Object.assign(T.fr,{navBack:"← Retour",navLeave:"Quitter sans enregistrer ?",navYes:"Oui",navNo:"Non"});
+if(T.af)Object.assign(T.af,{navBack:"← Terug",navLeave:"Gaan weg sonder om te stoor?",navYes:"Ja",navNo:"Nee"});
+const NAV={st:[],last:"",up:0,skip:0,pass:0,sticky:0,saved:0,keys:[],sets:[],ups:[],sel:[],dirty:[],clear:[]};
+NAV.ups.push(()=>{if(tab==="reports"&&typeof rp!=="undefined"&&rp.id&&REPORTS.length>1){rp.id=null;return true}return false});
+function navKey(){let o={t:tab};NAV.keys.forEach(f=>{o=f(o)||o});return JSON.stringify(o)}
+function navTyped(){return [...document.querySelectorAll("#view input,#view textarea")].some(el=>{const ty=(el.type||"").toLowerCase();if(el.disabled||el.readOnly||/^(button|submit|reset|hidden|checkbox|radio|range|color)$/.test(ty))return false;if(ty==="file")return !!(el.files&&el.files.length);const v=(el.value||"").trim();if(!v)return false;return /^(date|time|datetime-local|month|week)$/.test(ty)?el.value!==el.defaultValue:true})}
+function navDirty(){return NAV.dirty.some(f=>{try{return !!f()}catch(e){return false}})||((!!formDirty||!!NAV.sticky)&&navTyped())}
+function navGoBack(){
+  if(NAV.ups.some(f=>{try{return f()}catch(e){return false}})){NAV.skip=1;render();scrollTo(0,0);return}
+  const cur=NAV.last;for(;;){let k=null;while(NAV.st.length){k=NAV.st.pop();if(k!==NAV.last&&k!==cur)break;k=null}
+  const o=k?JSON.parse(k):{t:"home"};tab=o.t;NAV.sets.forEach(f=>f(o));NAV.skip=1;render();if(!k||NAV.last!==cur)break}scrollTo(0,0);
+}
+function navAsk(yes){
+  const m=document.createElement("div");m.className="modal navAsk";m.id="navAsk";
+  m.innerHTML=`<div class="card"><h2>${esc(t("navLeave"))}</h2><button type="button" class="red" id="navYes">${esc(t("navYes"))}</button><button type="button" class="sec" id="navNo">${esc(t("navNo"))}</button></div>`;
+  document.body.appendChild(m);$("navNo").onclick=()=>m.remove();$("navYes").onclick=()=>{m.remove();yes()};
+}
+function navClear(){const u=me();if(u)document.querySelectorAll("#view [data-draft]").forEach(el=>L.del(dKey(u,el.dataset.draft)));NAV.clear.forEach(f=>{try{f()}catch(e){}});formDirty=0;NAV.sticky=0}
+document.addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closest(".navBack");if(!b)return;if(NAV.pass||!navDirty()){NAV.up=1;return}
+  e.preventDefault();e.stopImmediatePropagation();navAsk(()=>{navClear();NAV.pass=1;try{b.click()}finally{NAV.pass=0}})},true);
+function navAfter(){
+  const V=$("view");if(!V||!me())return;
+  const k=navKey();
+  if(NAV.skip)NAV.skip=0;else if(NAV.last&&k!==NAV.last){const i=NAV.st.lastIndexOf(k);if(i>=0)NAV.st.length=i;else if(!NAV.up)NAV.st.push(NAV.last)}NAV.up=0;
+  NAV.last=k;if(NAV.st.length>30)NAV.st.shift();
+  if(tab==="home"){NAV.st=[];return}
+  let b=null;const sel=NAV.sel.join(",");
+  if(sel){const c=V.querySelector(sel);if(c&&c.parentNode===V){let p=c.previousElementSibling,top=true;while(p){if(p.matches(".box,.tiles,table,form,.vgrid"))top=false;p=p.previousElementSibling}if(top)b=c}}
+  if(b){b.classList.add("navBack");b.textContent=t("navBack");V.insertBefore(b,V.firstChild)}
+  else{V.insertAdjacentHTML("afterbegin",`<button type="button" class="navBack" id="navBack">${esc(t("navBack"))}</button>`);$("navBack").onclick=navGoBack}
+}
+/* typing stays "unsaved" across redraws of the SAME screen (e.g. a pick that redraws the form) until a save or a screen change */
+{const r0=render;render=function(){const was=formDirty,k0=NAV.last;r0.apply(this,arguments);navAfter();if(NAV.last!==k0||NAV.saved)NAV.sticky=0;else if(was)NAV.sticky=1;NAV.saved=0};window.TMC.render=render}
+{const p0=put;put=function(){NAV.sticky=0;NAV.saved=1;return p0.apply(this,arguments)}}
+{const m0=remove;remove=function(){NAV.sticky=0;NAV.saved=1;return m0.apply(this,arguments)}}
+/* VER 12 SAVE-CLOSE (Johan, 5 Nov 2026): after a SUCCESSFUL Save, close the form and
+   return to the previous screen (same as the grey ← Back). Failures stay on the form with
+   what was typed. Offline saves that are queued on the phone (put wrote + dirty) count as
+   success. Apps: after put(...)!==false call TMC.afterSave(true) instead of render(); on
+   validation fail just return (stay). Do not auto-go-back from put itself — only form Saves. */
+function afterSave(ok){if(ok===false)return false;navClear();NAV.saved=1;navGoBack();return true}
+window.TMC.nav=NAV;window.TMC.navBack=navGoBack;window.TMC.navDirty=navDirty;window.TMC.afterSave=afterSave;
+/* VER 10 BACK END + VER 12 SAVE-CLOSE */
+render();
+if(syncOn())syncNow();else if(sUrl())api({action:"status",name:"-"}).catch(()=>{});else paintSync();  // no Sheet link yet: show "Not connected yet" at once
+})();
+/* SPELLCHECK START — phone spellcheck on every free-text box (names, items, notes).
+   Never on PIN / number / sync / code / masked fields. Covers boxes built later too. */
+(function(){
+  var SKIP=/pin|url|code|sync|pass|qty|price|amount|num|date|email|phone|tel/i;
+  function want(el){
+    if(el.hasAttribute("data-nospell")||el.classList.contains("msk")||el.classList.contains("mk")||el.readOnly||(el.getAttribute("autocapitalize")||"")==="characters")return false;
+    if(el.tagName==="TEXTAREA")return true;
+    var ty=(el.getAttribute("type")||"text").toLowerCase();
+    if(ty!=="text"&&ty!=="search")return false;
+    var im=(el.getAttribute("inputmode")||"").toLowerCase();
+    if(im==="numeric"||im==="decimal"||im==="tel"||im==="email"||im==="url")return false;
+    if(SKIP.test((el.id||"")+" "+(el.name||"")+" "+(el.className||"")))return false;
+    return true;
+  }
+  function fix(el){
+    if(!want(el)){if(el.tagName==="INPUT"||el.tagName==="TEXTAREA"){el.spellcheck=false;el.setAttribute("spellcheck","false")}return}
+    el.spellcheck=true;el.setAttribute("spellcheck","true");el.setAttribute("autocorrect","on");
+    var nm=/name|who/i.test((el.id||"")+" "+(el.name||""))&&el.tagName!=="TEXTAREA";
+    el.setAttribute("autocapitalize",nm?"words":"sentences");
+  }
+  function scan(root){if(!root||!root.querySelectorAll)return;if(root.matches&&root.matches("input,textarea"))fix(root);root.querySelectorAll("input,textarea").forEach(fix)}
+  window.TMC_spell=scan;
+  function go(){scan(document.body);new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(scan)})}).observe(document.body,{childList:true,subtree:true})}
+  if(document.body)go();else document.addEventListener("DOMContentLoaded",go);
+})();
+/* SPELLCHECK END */
+</script>
+</body></html>

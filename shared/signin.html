@@ -1,0 +1,22 @@
+<!-- TMC-SIGNIN v1 — shared sign-in block. Put signin.css in <style>.
+     Fill in: {COLOR} {COLOR_DARK} {LOGO} {APP_NAME} {LANG_ID} {NAME_ID} {ERR_ID} {GO_ID}
+     Text (EN/FR/AF):  placeholder  Type your name / Écrivez votre nom / Tik jou naam
+                       button       Continue / Continuer / Gaan aan
+                       ncBox        <b>🔴 Not connected</b><span>The app cannot reach the Sheet. Your work is kept on this phone and sent when it connects.</span><button>🔄 Try again</button>
+     NO other text: no welcome line, no label, no hint. Keep the app's own ids/JS. -->
+<div class="full tmcS" style="--tmcS-c:{COLOR};--tmcS-cd:{COLOR_DARK}">
+  <div class="signin">
+    <div class="card">
+      <img class="tmcS-logo" src="{LOGO}" width="84" height="84" alt="">
+      <h2 class="tmcS-t">{APP_NAME}</h2>
+      <select id="{LANG_ID}" class="tmcS-lang" aria-label="Language">
+        <option value="en">🌐 English</option><option value="fr">🌐 Français</option><option value="af">🌐 Afrikaans</option>
+      </select>
+      <input id="{NAME_ID}" class="tmcS-name" type="text" placeholder="Type your name" autocomplete="off" spellcheck="true">
+      <p id="{ERR_ID}" class="tmcS-err" style="display:none"></p>
+      <button type="button" id="{GO_ID}" class="tmcS-go">Continue</button>
+    </div>
+    <div id="ncW" class="ncW ncBox" role="alert" style="display:none"></div>
+  </div>
+</div>
+<!-- ncBox content when shown: <b>{ncT}</b><span>{ncH}</span><button type="button">{Try again}</button> -->

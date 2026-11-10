@@ -1,0 +1,11 @@
+{
+  "note": "Archived from the sanitized TMC Base packaging copy. These names are placeholders, not this sample's display name, and they are not credentials. No PIN, SYNC_URL, SYNC_CODE, or team code was in the package. The live Workshop sample stores the Admin as JA Kirsten. Johan spellings map to jakirsten.",
+  "ADMIN_NAME": "Template Admin",
+  "ADMIN_ALIASES": ["templateadmin", "templateadmintwo", "templateadminthree", "templateadminfour"],
+  "sample": {
+    "ADMIN_NAME": "JA Kirsten",
+    "canonical_key": "jakirsten",
+    "johan_aliases": ["jakirsten", "johankirsten", "johanakirsten", "jkirsten"],
+    "why_template_keys_remain": "templateadmin and the numbered fixtures stay in ADMIN_ALIASES so the packaged base tests, which still type Template Admin, resolve to this same one Admin. They do not create a second user."
+  }
+}
