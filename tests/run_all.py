@@ -1056,6 +1056,15 @@ try:
         if line.startswith('  PASS '):R['pass']+=1
         elif line.startswith('  FAIL '):R['fail']+=1;ERR.append(line)
       ok(im.returncode==0 and 'IMPORT:' in (im.stdout or ''),'import script finished clean (exit %d)'%im.returncode)
+    asp=os.path.join(APP,'tests','test_admin_stock.py')
+    if os.path.exists(asp):
+      aa=subprocess.run([sys.executable,asp,APP],capture_output=True,text=True,timeout=300)
+      print(aa.stdout,end='',flush=True)
+      if aa.stderr:print(aa.stderr[-500:],end='',flush=True)
+      for line in (aa.stdout or '').splitlines():
+        if line.startswith('  PASS '):R['pass']+=1
+        elif line.startswith('  FAIL '):R['fail']+=1;ERR.append(line)
+      ok(aa.returncode==0 and 'ADMIN STOCK:' in (aa.stdout or ''),'admin stock script finished clean (exit %d)'%aa.returncode)
   else:skip('no tests/test_workshop.py')
   sec('11. Console errors')
   ok(not ERR,'no console errors %s'%ERR[:5])

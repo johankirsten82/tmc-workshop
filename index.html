@@ -24,7 +24,7 @@
   "CACHE_PREFIX": "tmcworkshop",
   "NAME": "TMC Workshop",
   "SHORT": "TMC Workshop",
-  "VER": 2,
+  "VER": 3,
   "COLOR": "#b45309",
   "COLOR_DARK": "#7c2d12",
   "REPORT_COLOR": "#1B7F3B",
@@ -141,7 +141,12 @@ html{scroll-padding-bottom:96px}
 #wjMat h2{margin:0 0 4px}
 #wjMat label{margin:2px 0}
 #wjMat textarea{min-height:58px}
-#wjSaveM,#wjSave,#wjSavePh{scroll-margin-bottom:96px}
+#wjSaveM,#wjSave,#wjSavePh,#wjSaveAdd,#wjSaveSet{scroll-margin-bottom:96px}
+#wjPicks{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+#wjPicks button{width:auto;min-height:56px;padding:8px 14px;margin:0;font-size:16px}
+.wjHold{align-items:center}
+.wjHold .wjSet{flex:none;width:auto;min-width:132px;margin:4px 0}
+#wjAddStock{font-size:20px;min-height:64px}
 </style></head><body>
 <div id="app"></div>
 <script>
@@ -596,14 +601,14 @@ function bindRep(u){const on=(id,fn)=>{const e=$(id);if(e)e.onclick=fn};
 Object.assign(window.TMC,{addReport:addReport,REPORTS:REPORTS,XL:XL,repXlsx:repXlsx,rpData:rpData,sendXls:sendXls,repOk:repOk,rp:()=>rp});
 /* ==================== APP FEATURES START ====================
    Workshop jobs. Kinds: j job, m material on a job, p completed photo,
-   t queued Food transfer (mock until stock-transfer-contract.md), k stock movement.
-   Kind u is reserved. No live Food call. A transfer ref is credited once.
-   Allocating to a job deducts workshop stock and never goes below zero.
+   hj Food transfer, k stock movement (Food in, Admin add, Admin set count, job out).
+   Kind u is reserved. A transfer ref is credited once.
+   On hand = Food in + Admin adds/sets − used on jobs, and never goes below zero.
    Successful Save calls TMC.afterSave(true). */
-Object.assign(T.en,{wjTitle:"Jobs",wjNew:"New job",wjNone:"No jobs yet. Tap New job.",wjNoneF:"No jobs of this type.",wjSample:"Sample only. Steel, rope and the photo stay on this job.",wjAll:"All",wjBuild:"Build",wjRepair:"Repair",wjName:"Job name",wjNameH:"Job name",wjType:"Build or Repair",wjNeed:"Type the job name.",wjSave:"Save job",wjSteel:"Add steel",wjRope:"Add rope",wjOther:"Add other",wjDesc:"What was used",wjDescH:"Description",wjPcs:"Pieces",wjLen:"Length",wjUnit:"Unit",wjNeedDesc:"Type what was used.",wjNeedPcs:"Type how many pieces.",wjNeedLen:"Type the length.",wjBadNum:"Use a number like 2 or 12.5.",wjSaveM:"Save material",wjTot:"On this job",wjSteelTot:"Steel",wjRopeTot:"Rope",wjOtherTot:"Other",wjHist:"Materials used",wjNoMat:"Nothing loaded on this job yet.",wjPhoto:"Completed photo",wjPhotoH:"Take or upload a photo of the finished job.",wjNeedPh:"Take or upload a photo first.",wjSavePh:"Save photo",wjDone:"Completed",wjOpenJob:"No photo yet",wjEx:"EXAMPLE",wjPcsU:"pieces",wjWhen:"Saved",wjStock:"Workshop stock",wjStockH:"Sample only. Food is not connected. Stock appears when a transfer is accepted.",wjQueue:"Queue example from Food",wjQueued:"Queued",wjReceived:"Received",wjReceive:"Receive",wjOnHand:"On hand",wjNoneSt:"No stock yet. Queue an example from Food, then Receive.",wjAudit:"Stock history",wjShort:"Not enough in workshop stock.",wjIn:"In from Food (example)",wjOut:"Used on a job",wjHave:"On hand now"});
-Object.assign(T.fr,{wjTitle:"Travaux",wjNew:"Nouveau travail",wjNone:"Pas encore de travail. Touchez Nouveau travail.",wjNoneF:"Aucun travail de ce type.",wjSample:"Exemple seulement. L'acier, la corde et la photo restent sur ce travail.",wjAll:"Tous",wjBuild:"Construction",wjRepair:"Réparation",wjName:"Nom du travail",wjNameH:"Nom du travail",wjType:"Construction ou réparation",wjNeed:"Écrivez le nom du travail.",wjSave:"Enregistrer le travail",wjSteel:"Ajouter acier",wjRope:"Ajouter corde",wjOther:"Ajouter autre",wjDesc:"Ce qui a été utilisé",wjDescH:"Description",wjPcs:"Pièces",wjLen:"Longueur",wjUnit:"Unité",wjNeedDesc:"Écrivez ce qui a été utilisé.",wjNeedPcs:"Écrivez le nombre de pièces.",wjNeedLen:"Écrivez la longueur.",wjBadNum:"Utilisez un nombre comme 2 ou 12,5.",wjSaveM:"Enregistrer",wjTot:"Sur ce travail",wjSteelTot:"Acier",wjRopeTot:"Corde",wjOtherTot:"Autre",wjHist:"Matériel utilisé",wjNoMat:"Rien chargé sur ce travail.",wjPhoto:"Photo finie",wjPhotoH:"Prenez ou envoyez la photo du travail fini.",wjNeedPh:"Prenez ou envoyez une photo d'abord.",wjSavePh:"Enregistrer la photo",wjDone:"Fini",wjOpenJob:"Pas de photo",wjEx:"EXEMPLE",wjPcsU:"pièces",wjWhen:"Enregistré",wjStock:"Stock atelier",wjStockH:"Exemple seulement. Food n'est pas branché. Le stock arrive quand un transfert est accepté.",wjQueue:"Mettre un exemple Food en file",wjQueued:"En file",wjReceived:"Reçu",wjReceive:"Recevoir",wjOnHand:"En stock",wjNoneSt:"Pas encore de stock. Mettez un exemple en file, puis Recevoir.",wjAudit:"Historique du stock",wjShort:"Pas assez dans le stock atelier.",wjIn:"Entrée Food (exemple)",wjOut:"Utilisé sur un travail",wjHave:"En stock maintenant"});
-Object.assign(T.af,{wjTitle:"Werke",wjNew:"Nuwe werk",wjNone:"Nog geen werk nie. Tik Nuwe werk.",wjNoneF:"Geen werk van hierdie soort nie.",wjSample:"Net 'n voorbeeld. Staal, tou en die foto bly op hierdie werk.",wjAll:"Alles",wjBuild:"Bou",wjRepair:"Herstel",wjName:"Werknaam",wjNameH:"Werknaam",wjType:"Bou of herstel",wjNeed:"Tik die werknaam.",wjSave:"Stoor werk",wjSteel:"Voeg staal by",wjRope:"Voeg tou by",wjOther:"Voeg ander by",wjDesc:"Wat gebruik is",wjDescH:"Beskrywing",wjPcs:"Stukke",wjLen:"Lengte",wjUnit:"Eenheid",wjNeedDesc:"Tik wat gebruik is.",wjNeedPcs:"Tik hoeveel stukke.",wjNeedLen:"Tik die lengte.",wjBadNum:"Gebruik 'n nommer soos 2 of 12.5.",wjSaveM:"Stoor materiaal",wjTot:"Op hierdie werk",wjSteelTot:"Staal",wjRopeTot:"Tou",wjOtherTot:"Ander",wjHist:"Materiaal gebruik",wjNoMat:"Nog niks op hierdie werk nie.",wjPhoto:"Klaar foto",wjPhotoH:"Neem of laai die foto van die klaar werk.",wjNeedPh:"Neem of laai eers 'n foto.",wjSavePh:"Stoor foto",wjDone:"Klaar",wjOpenJob:"Nog geen foto nie",wjEx:"VOORBEELD",wjPcsU:"stukke",wjWhen:"Gestoor",wjStock:"Werkswinkel voorraad",wjStockH:"Net 'n voorbeeld. Food is nie gekoppel nie. Voorraad wys as 'n oordrag aanvaar is.",wjQueue:"Sit Food voorbeeld in die ry",wjQueued:"In die ry",wjReceived:"Ontvang",wjReceive:"Ontvang dit",wjOnHand:"Op hande",wjNoneSt:"Nog geen voorraad nie. Sit 'n voorbeeld in die ry, dan Ontvang dit.",wjAudit:"Voorraad storie",wjShort:"Nie genoeg in die werkswinkel voorraad nie.",wjIn:"In van Food (voorbeeld)",wjOut:"Gebruik op 'n werk",wjHave:"Nou op hande"});
-const WS={screen:"list",flt:"all",jobId:null,mat:null,type:"build",pendingPhoto:null,thumbs:{},err:""};
+Object.assign(T.en,{wjTitle:"Jobs",wjNew:"New job",wjNone:"No jobs yet. Tap New job.",wjNoneF:"No jobs of this type.",wjSample:"Sample only. Steel, rope and the photo stay on this job.",wjAll:"All",wjBuild:"Build",wjRepair:"Repair",wjName:"Job name",wjNameH:"Job name",wjType:"Build or Repair",wjNeed:"Type the job name.",wjSave:"Save job",wjSteel:"Add steel",wjRope:"Add rope",wjOther:"Add other",wjDesc:"What was used",wjDescH:"Description",wjPcs:"Pieces",wjLen:"Length",wjUnit:"Unit",wjNeedDesc:"Type what was used.",wjNeedPcs:"Type how many pieces.",wjNeedLen:"Type the length.",wjBadNum:"Use a number like 2 or 12.5.",wjSaveM:"Save material",wjTot:"On this job",wjSteelTot:"Steel",wjRopeTot:"Rope",wjOtherTot:"Other",wjHist:"Materials used",wjNoMat:"Nothing loaded on this job yet.",wjPhoto:"Completed photo",wjPhotoH:"Take or upload a photo of the finished job.",wjNeedPh:"Take or upload a photo first.",wjSavePh:"Save photo",wjDone:"Completed",wjOpenJob:"No photo yet",wjEx:"EXAMPLE",wjPcsU:"pieces",wjWhen:"Saved",wjStock:"Workshop stock",wjStockH:"Stock comes from Food and from items the Admin adds.",wjQueue:"Queue example from Food",wjQueued:"Queued",wjReceived:"Received",wjReceive:"Receive",wjOnHand:"On hand",wjNoneSt:"No stock yet.",wjAudit:"Stock history",wjShort:"Not enough in workshop stock.",wjIn:"In from Food",wjOut:"Used on a job",wjHave:"On hand now",wjNoneRec:"None received yet.",wjAddSt:"Add stock",wjAddStH:"Type the item, how many, and save.",wjItem:"Item name",wjItemH:"Item name",wjPick:"Or pick one already in stock",wjMatType:"Type",wjQty:"Quantity",wjNote:"Note (optional)",wjNeedItem:"Type the item name.",wjNeedQty:"Type how many.",wjSaveAdd:"Save stock",wjSet:"Set count",wjSetT:"Set count",wjSetH:"Type the number that is in stock now.",wjSaveSet:"Save count",wjInAdmin:"Added by Admin",wjSetAud:"Set count",wjMUnit:"metres"});
+Object.assign(T.fr,{wjTitle:"Travaux",wjNew:"Nouveau travail",wjNone:"Pas encore de travail. Touchez Nouveau travail.",wjNoneF:"Aucun travail de ce type.",wjSample:"Exemple seulement. L'acier, la corde et la photo restent sur ce travail.",wjAll:"Tous",wjBuild:"Construction",wjRepair:"Réparation",wjName:"Nom du travail",wjNameH:"Nom du travail",wjType:"Construction ou réparation",wjNeed:"Écrivez le nom du travail.",wjSave:"Enregistrer le travail",wjSteel:"Ajouter acier",wjRope:"Ajouter corde",wjOther:"Ajouter autre",wjDesc:"Ce qui a été utilisé",wjDescH:"Description",wjPcs:"Pièces",wjLen:"Longueur",wjUnit:"Unité",wjNeedDesc:"Écrivez ce qui a été utilisé.",wjNeedPcs:"Écrivez le nombre de pièces.",wjNeedLen:"Écrivez la longueur.",wjBadNum:"Utilisez un nombre comme 2 ou 12,5.",wjSaveM:"Enregistrer",wjTot:"Sur ce travail",wjSteelTot:"Acier",wjRopeTot:"Corde",wjOtherTot:"Autre",wjHist:"Matériel utilisé",wjNoMat:"Rien chargé sur ce travail.",wjPhoto:"Photo finie",wjPhotoH:"Prenez ou envoyez la photo du travail fini.",wjNeedPh:"Prenez ou envoyez une photo d'abord.",wjSavePh:"Enregistrer la photo",wjDone:"Fini",wjOpenJob:"Pas de photo",wjEx:"EXEMPLE",wjPcsU:"pièces",wjWhen:"Enregistré",wjStock:"Stock atelier",wjStockH:"Le stock vient de Food et des articles ajoutés par l'Admin.",wjQueue:"Mettre un exemple Food en file",wjQueued:"En file",wjReceived:"Reçu",wjReceive:"Recevoir",wjOnHand:"En stock",wjNoneSt:"Pas encore de stock.",wjAudit:"Historique du stock",wjShort:"Pas assez dans le stock atelier.",wjIn:"Entrée Food",wjOut:"Utilisé sur un travail",wjHave:"En stock maintenant",wjNoneRec:"Rien reçu encore.",wjAddSt:"Ajouter du stock",wjAddStH:"Écrivez l'article, le nombre, et enregistrez.",wjItem:"Nom de l'article",wjItemH:"Nom de l'article",wjPick:"Ou choisissez un article déjà en stock",wjMatType:"Type",wjQty:"Quantité",wjNote:"Note (facultatif)",wjNeedItem:"Écrivez le nom de l'article.",wjNeedQty:"Écrivez le nombre.",wjSaveAdd:"Enregistrer le stock",wjSet:"Fixer le nombre",wjSetT:"Fixer le nombre",wjSetH:"Écrivez le nombre en stock maintenant.",wjSaveSet:"Enregistrer le nombre",wjInAdmin:"Ajouté par l'Admin",wjSetAud:"Nombre fixé",wjMUnit:"mètres"});
+Object.assign(T.af,{wjTitle:"Werke",wjNew:"Nuwe werk",wjNone:"Nog geen werk nie. Tik Nuwe werk.",wjNoneF:"Geen werk van hierdie soort nie.",wjSample:"Net 'n voorbeeld. Staal, tou en die foto bly op hierdie werk.",wjAll:"Alles",wjBuild:"Bou",wjRepair:"Herstel",wjName:"Werknaam",wjNameH:"Werknaam",wjType:"Bou of herstel",wjNeed:"Tik die werknaam.",wjSave:"Stoor werk",wjSteel:"Voeg staal by",wjRope:"Voeg tou by",wjOther:"Voeg ander by",wjDesc:"Wat gebruik is",wjDescH:"Beskrywing",wjPcs:"Stukke",wjLen:"Lengte",wjUnit:"Eenheid",wjNeedDesc:"Tik wat gebruik is.",wjNeedPcs:"Tik hoeveel stukke.",wjNeedLen:"Tik die lengte.",wjBadNum:"Gebruik 'n nommer soos 2 of 12.5.",wjSaveM:"Stoor materiaal",wjTot:"Op hierdie werk",wjSteelTot:"Staal",wjRopeTot:"Tou",wjOtherTot:"Ander",wjHist:"Materiaal gebruik",wjNoMat:"Nog niks op hierdie werk nie.",wjPhoto:"Klaar foto",wjPhotoH:"Neem of laai die foto van die klaar werk.",wjNeedPh:"Neem of laai eers 'n foto.",wjSavePh:"Stoor foto",wjDone:"Klaar",wjOpenJob:"Nog geen foto nie",wjEx:"VOORBEELD",wjPcsU:"stukke",wjWhen:"Gestoor",wjStock:"Werkswinkel voorraad",wjStockH:"Voorraad kom van Food en van items wat die Admin byvoeg.",wjQueue:"Sit Food voorbeeld in die ry",wjQueued:"In die ry",wjReceived:"Ontvang",wjReceive:"Ontvang dit",wjOnHand:"Op hande",wjNoneSt:"Nog geen voorraad nie.",wjAudit:"Voorraad storie",wjShort:"Nie genoeg in die werkswinkel voorraad nie.",wjIn:"In van Food",wjOut:"Gebruik op 'n werk",wjHave:"Nou op hande",wjNoneRec:"Nog niks ontvang nie.",wjAddSt:"Voeg voorraad by",wjAddStH:"Tik die item, hoeveel, en stoor.",wjItem:"Itemnaam",wjItemH:"Itemnaam",wjPick:"Of kies een wat al in voorraad is",wjMatType:"Soort",wjQty:"Hoeveelheid",wjNote:"Nota (opsioneel)",wjNeedItem:"Tik die itemnaam.",wjNeedQty:"Tik hoeveel.",wjSaveAdd:"Stoor voorraad",wjSet:"Stel hoeveelheid",wjSetT:"Stel hoeveelheid",wjSetH:"Tik die getal wat nou in voorraad is.",wjSaveSet:"Stoor hoeveelheid",wjInAdmin:"Bygevoeg deur die Admin",wjSetAud:"Hoeveelheid gestel",wjMUnit:"meter"});
+const WS={screen:"list",flt:"all",jobId:null,mat:null,type:"build",addType:"steel",addUnit:"piece",setDesc:"",setMat:null,pendingPhoto:null,thumbs:{},err:""};
 function wNum(s){const t=String(s==null?"":s).trim().replace(/\s/g,"").replace(",",".");if(!t)return null;if(!/^\d+(\.\d+)?$/.test(t))return NaN;return +t}
 function wFmt(n){if(n==null||!isFinite(+n))return "";const r=Math.round(+n*1000)/1000;return String(r)}
 function wEx(r){return !!(r&&(r.example||/^example\b/i.test(String(r.name||r.desc||""))))}
@@ -619,7 +624,13 @@ function foldName(s){return String(s||"").trim().normalize("NFD").replace(/[\u03
 function wApplied(ref){if(!ref)return true;const h=all("hj").find(x=>x.id===ref);return !!(h&&h.status==="applied")}
 function wThou(k,q){const f=q?"qThou":"lThou";if(k[f]!=null&&isFinite(+k[f]))return +k[f];return Math.round(((q?+k.qty:+k.len)||0)*1000)}
 function wClass(u){u=String(u||"").toLowerCase();if(u==="m"||u==="cm"||u==="mm")return "len";if(u==="piece"||u==="pieces"||u==="pc"||u==="pcs")return "piece";return "other"}
-function wOn(mat,desc){let q=0,l=0;const want=foldName(desc);all("k").forEach(k=>{if(foldName(k.desc)!==want)return;if(k.dir==="in"&&!wApplied(k.ref))return;if(mat==="rope"){if(k.dir==="out"){l-=wThou(k,0);return}if(wClass(k.unit)==="len")l+=k.lThou!=null?+k.lThou:Math.round((+k.len||+k.qty||0)*1000);return}if(mat==="steel"){if(k.dir==="out"){q-=wThou(k,1);l-=wThou(k,0);return}if(wClass(k.unit)==="piece")q+=wThou(k,1);else if(wClass(k.unit)==="len")l+=k.lThou!=null?+k.lThou:Math.round((+k.len||+k.qty||0)*1000);return}if(k.dir==="out")q-=wThou(k,1);else q+=wThou(k,1)});return {qty:q/1000,len:l/1000}}
+function wMoves(desc){const want=foldName(desc);return all("k").filter(k=>foldName(k.desc)===want&&(k.dir!=="in"||wApplied(k.ref))).sort((a,b)=>String(a.at||"").localeCompare(String(b.at||""))||String(a.id||"").localeCompare(String(b.id||"")))}
+function wAddThou(k,len){if(len)return k.lThou!=null?+k.lThou:Math.round((+k.len||+k.qty||0)*1000);return wThou(k,1)}
+function wOn(mat,desc){let q=0,l=0;wMoves(desc).forEach(k=>{const piece=wClass(k.unit)==="piece",len=wClass(k.unit)==="len";if(k.dir==="set"){if(mat==="rope"||len)l=wAddThou(k,true);if(mat!=="rope"&&!len)q=wAddThou(k,false);return}if(mat==="rope"){if(k.dir==="out"){l-=wThou(k,0);return}if(len)l+=wAddThou(k,true);return}if(mat==="steel"){if(k.dir==="out"){q-=wThou(k,1);l-=wThou(k,0);return}if(piece)q+=wAddThou(k,false);else if(len)l+=wAddThou(k,true);return}if(k.dir==="out")q-=wThou(k,1);else q+=wAddThou(k,false)});return {qty:q/1000,len:l/1000}}
+function wItemMat(desc){let steel=0,rope=0;wMoves(desc).forEach(k=>{if(k.mat==="steel"||wClass(k.unit)==="piece")steel=1;else if(k.mat==="rope"||wClass(k.unit)==="len")rope=1});return steel?"steel":rope?"rope":"other"}
+function wStockItems(){const seen={},rows=[];all("k").forEach(k=>{if(k.dir==="in"&&!wApplied(k.ref))return;const key=foldName(k.desc);if(!k.desc||seen[key])return;seen[key]=1;const mat=wItemMat(k.desc);rows.push({mat:mat,desc:k.desc,bal:wOn(mat,k.desc)})});rows.sort((a,b)=>foldName(a.desc).localeCompare(foldName(b.desc)));return rows}
+function wBalTxt(mat,desc,b){b=b||wOn(mat,desc);let hasP=false,hasL=false;wMoves(desc).forEach(k=>{if(wClass(k.unit)==="len"||+k.len)hasL=true;if(wClass(k.unit)==="piece"||+k.qty||(k.dir==="set"&&wClass(k.unit)!=="len"))hasP=true});if(mat==="rope"){hasL=true;hasP=false}if(!hasP&&!hasL)hasP=true;const bits=[];if(hasP)bits.push(wFmt(b.qty)+" "+t("wjPcsU"));if(hasL)bits.push(wFmt(b.len)+" m");return bits.join(" · ")}
+function wMatLab(mat){return mat==="rope"?t("wjRopeTot"):mat==="steel"?t("wjSteelTot"):t("wjOtherTot")}
 addReport({id:"wjobs",title:{en:"Materials per job",fr:"Matériel par travail",af:"Materiaal per werk"},
  cols:[{key:"date",label:{en:"Date",fr:"Date",af:"Datum"}},{key:"job",label:{en:"Job",fr:"Travail",af:"Werk"}},{key:"steel",label:{en:"Steel",fr:"Acier",af:"Staal"},num:true,sum:true},{key:"rope",label:{en:"Rope m",fr:"Corde m",af:"Tou m"},num:true,d:1,sum:true}],
  rows:(f,to)=>{return all("j").filter(j=>{const d=j.at?ymd(new Date(j.at)):"";return d&&d>=f&&d<=to}).sort((a,b)=>String(a.at).localeCompare(String(b.at))).map(j=>{const ms=all("m").filter(m=>m.jobId===j.id);const steel=ms.filter(m=>m.mat==="steel").reduce((s,m)=>s+(+m.qty||0),0);const rope=ms.filter(m=>m.mat==="rope").reduce((s,m)=>s+(+m.len||0),0);return {date:ymd(new Date(j.at)),job:j.name||"",steel:steel,rope:Math.round(rope*10)/10}})}});
@@ -630,6 +641,8 @@ function workHTML(u){
   if(WS.screen==="mat")return wMatForm(u);
   if(WS.screen==="photo")return wPhotoHTML(u);
   if(WS.screen==="stock")return wStockHTML(u);
+  if(WS.screen==="addstock")return wAddStockHTML(u);
+  if(WS.screen==="setstock")return wSetStockHTML(u);
   return wListHTML(u);
 }
 function wListHTML(u){
@@ -660,13 +673,49 @@ function wJobHTML(u){
   ${canKind("m","add")?`<button type="button" id="wjAddSteel">${esc(t("wjSteel"))}</button><button type="button" class="sec" id="wjAddRope">${esc(t("wjRope"))}</button><button type="button" class="sec" id="wjAddOther">${esc(t("wjOther"))}</button>`:""}</div>`;
 }
 function wPic(ph){const st="max-height:96px;width:100%;object-fit:contain;background:#f8fafc";const src=WS.thumbs[ph];if(src)return `<img id="wjPic" class="phPrev" alt="" style="${st}" src="${esc(src)}">`;return `<img id="wjPic" class="phPrev" alt="" data-phid="${esc(ph)}" style="display:none;${st}">`}
-function wHand(mat){const seen={},rows=[];all("k").forEach(k=>{if(k.mat!==mat||k.dir!=="in"||!wApplied(k.ref))return;const key=foldName(k.desc);if(seen[key])return;seen[key]=1;const b=wOn(mat,k.desc);rows.push(`<p><b>${esc(k.desc)}</b> ${esc(wFmt(b.qty))} ${esc(t("wjPcsU"))} · ${esc(wFmt(b.len))} m</p>`)});return rows.join("")||`<p class="hint">0</p>`}
+function wHand(mat){const seen={},rows=[];all("k").forEach(k=>{if((mat&&k.mat!==mat)||(k.dir==="in"&&!wApplied(k.ref)))return;const key=foldName(k.desc);if(!k.desc||seen[key])return;seen[key]=1;const b=wOn(mat||k.mat||"other",k.desc);rows.push(`<p><b>${esc(k.desc)}</b> ${esc(wBalTxt(mat||k.mat||"other",k.desc,b))}</p>`)});return rows.join("")||`<p class="hint">0</p>`}
 function wStockHTML(u){
   const hs=all("hj").slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
   const ks=all("k").filter(k=>k.dir!=="in"||wApplied(k.ref)).slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
-  const hold=[];all("k").forEach(k=>{if(k.dir!=="in"||!wApplied(k.ref))return;const bits=[];if(+k.qty)bits.push(wFmt(k.qty)+" "+(wClass(k.unit)==="piece"?t("wjPcsU"):(k.unit||"")));if(+k.len)bits.push(wFmt(k.len)+" "+(k.unit||"m"));hold.push(`<p><b>${esc(k.desc)}</b> ${esc(bits.join(" · "))} · ${esc(t("wjEx"))}</p>`)});
-  const aud=k=>{const j=k.jobId?wJob(k.jobId):null;const bits=[];if(+k.qty)bits.push(wFmt(k.qty)+" "+(wClass(k.unit)==="piece"?t("wjPcsU"):(k.unit||"")));if(+k.len)bits.push(wFmt(k.len)+" "+(k.unit||"m"));return `<div class="urow wjAud"><span class="n">${esc(k.dir==="out"?t("wjOut"):t("wjIn"))}</span><span class="hint">${esc(wWhen(k.at))} · ${esc(k.desc)} · ${esc(bits.join(" · "))}${j?" · "+esc(j.name):""}</span></div>`};
-  return `<div class="box" id="wjStockBox"><h2>${esc(t("wjStock"))}</h2><p class="hint">${esc(t("wjStockH"))}</p><h3>${esc(t("wjOnHand"))}</h3><div id="wjOnHand">${hold.length?hold.join(""):`<p class="hint">${esc(t("wjNoneSt"))}</p>`}</div><h3>${esc(t("wjReceived"))}</h3>${hs.length?hs.map(h=>`<div class="urow wjTr" data-ref="${esc(h.id)}"><span class="n">${esc(h.id)}</span><span class="st">${esc(h.status==="applied"?t("wjReceived"):t("wjQueued"))}</span><span class="hint">${esc(wWhen(h.at))} · fi</span></div>`).join(""):`<p class="hint">${esc(t("wjNoneSt"))}</p>`}<h3>${esc(t("wjAudit"))}</h3><div id="wjAudit">${ks.length?ks.map(aud).join(""):`<p class="hint">—</p>`}</div></div>`;
+  const hold=wStockItems();
+  const row=r=>`<div class="urow wjHold" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}"><span class="n">${esc(r.desc)}</span><span class="hint">${esc(wBalTxt(r.mat,r.desc,r.bal))} · ${esc(wMatLab(r.mat))}</span>${u.admin?`<button type="button" class="sm sec wjSet" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}">${esc(t("wjSet"))}</button>`:""}</div>`;
+  const aud=k=>{const j=k.jobId?wJob(k.jobId):null;const bits=[];if(k.qty!=null&&k.qty!==""&&wClass(k.unit)!=="len")bits.push(wFmt(k.qty)+" "+t("wjPcsU"));if(+k.len||wClass(k.unit)==="len")bits.push(wFmt(k.len||k.qty||0)+" "+(wClass(k.unit)==="len"?(k.unit||"m"):(k.unit||"m")));const lab=k.dir==="out"?t("wjOut"):k.dir==="set"?t("wjSetAud"):(k.sourceApp==="fi"||k.ref)?t("wjIn"):t("wjInAdmin");return `<div class="urow wjAud"><span class="n">${esc(lab)}</span><span class="hint">${esc(wWhen(k.at))} · ${esc(k.desc)} · ${esc(bits.join(" · "))}${k.by?" · "+esc(k.by):""}${j?" · "+esc(j.name):""}${k.note?" · "+esc(k.note):""}</span></div>`};
+  return `<div class="box" id="wjStockBox"><h2>${esc(t("wjStock"))}</h2><p class="hint">${esc(t("wjStockH"))}</p>
+  ${u.admin?`<button type="button" id="wjAddStock">${esc(t("wjAddSt"))}</button>`:""}
+  <h3>${esc(t("wjOnHand"))}</h3><div id="wjOnHand">${hold.length?hold.map(row).join(""):`<p class="hint">${esc(t("wjNoneSt"))}</p>`}</div>
+  <h3>${esc(t("wjReceived"))}</h3>${hs.length?hs.map(h=>`<div class="urow wjTr" data-ref="${esc(h.id)}"><span class="n">${esc(h.id)}</span><span class="st">${esc(h.status==="applied"?t("wjReceived"):t("wjQueued"))}</span><span class="hint">${esc(wWhen(h.at))} · fi</span></div>`).join(""):`<p class="hint">${esc(t("wjNoneRec"))}</p>`}
+  <h3>${esc(t("wjAudit"))}</h3><div id="wjAudit">${ks.length?ks.map(aud).join(""):`<p class="hint">—</p>`}</div></div>`;
+}
+function wAddStockHTML(u){
+  if(!u||!u.admin){WS.screen="stock";return wStockHTML(u)}
+  const items=wStockItems(),typ=WS.addType||"steel",unit=typ==="rope"?"m":(WS.addUnit||"piece");
+  const typB=(k,lab)=>`<button type="button" class="sec${typ===k?" on":""}" id="wjAdTy${k}" data-adty="${k}">${esc(lab)}</button>`;
+  const unitB=(k,lab)=>`<button type="button" class="sec${unit===k?" on":""}" id="wjAdUn${k}" data-adun="${k}">${esc(lab)}</button>`;
+  const picks=items.length?`<p class="hint">${esc(t("wjPick"))}</p><div id="wjPicks">${items.map(r=>`<button type="button" class="sec wjPickIt" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}">${esc(r.desc)}</button>`).join("")}</div>`:"";
+  return `<div class="box" id="wjAddBox"><h2>${esc(t("wjAddSt"))}</h2><p class="hint">${esc(t("wjAddStH"))}</p>
+  <label for="wjItem">${esc(t("wjItem"))}</label><input id="wjItem" data-draft="wjItem" type="text" list="wjItemList" autocomplete="off" spellcheck="true" autocapitalize="sentences" placeholder="${esc(t("wjItemH"))}">
+  <datalist id="wjItemList">${items.map(r=>`<option value="${esc(r.desc)}">`).join("")}</datalist>
+  ${picks}
+  <p class="hint">${esc(t("wjMatType"))}</p><div class="rpBar">${typB("steel",t("wjSteelTot"))}${typB("rope",t("wjRopeTot"))}${typB("other",t("wjOtherTot"))}</div>
+  <label for="wjAddQty">${esc(t("wjQty"))}</label><input id="wjAddQty" data-draft="wjAddQty" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${unit==="m"?"12.5":"10"}">
+  <p class="hint">${esc(t("wjUnit"))}</p><div class="rpBar" style="grid-template-columns:1fr 1fr">${unitB("piece",t("wjPcsU"))}${unitB("m",t("wjMUnit"))}</div>
+  <label for="wjAddNote">${esc(t("wjNote"))}</label><textarea id="wjAddNote" rows="2" data-draft="wjAddNote" autocomplete="off" spellcheck="true"></textarea>
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p><p class="hint" id="drNote" style="display:none">${esc(t("draft"))}</p>
+  <button type="button" id="wjSaveAdd">${esc(t("wjSaveAdd"))}</button></div>`;
+}
+function wSetStockHTML(u){
+  if(!u||!u.admin){WS.screen="stock";return wStockHTML(u)}
+  const desc=WS.setDesc||"",mat=WS.setMat||"steel",bal=wOn(mat,desc),unit=WS.addUnit||(mat==="rope"?"m":"piece");
+  const unitB=(k,lab)=>`<button type="button" class="sec${unit===k?" on":""}" id="wjAdUn${k}" data-adun="${k}">${esc(lab)}</button>`;
+  const cur=unit==="m"?bal.len:bal.qty;
+  return `<div class="box" id="wjSetBox"><h2>${esc(t("wjSetT"))}</h2><p class="hint">${esc(t("wjSetH"))}</p>
+  <p><b>${esc(desc||"—")}</b> · ${esc(wMatLab(mat))}</p>
+  <p class="hint">${esc(t("wjHave"))}: ${esc(wBalTxt(mat,desc,bal))}</p>
+  <label for="wjAddQty">${esc(t("wjQty"))}</label><input id="wjAddQty" data-draft="wjSetQty" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${esc(wFmt(cur))}" value="${esc(wFmt(cur))}">
+  <p class="hint">${esc(t("wjUnit"))}</p><div class="rpBar" style="grid-template-columns:1fr 1fr">${unitB("piece",t("wjPcsU"))}${unitB("m",t("wjMUnit"))}</div>
+  <label for="wjAddNote">${esc(t("wjNote"))}</label><textarea id="wjAddNote" rows="2" data-draft="wjSetNote" autocomplete="off" spellcheck="true"></textarea>
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p>
+  <button type="button" id="wjSaveSet">${esc(t("wjSaveSet"))}</button></div>`;
 }
 function wMatForm(u){
   const lab=WS.mat==="rope"?t("wjRope"):WS.mat==="other"?t("wjOther"):t("wjSteel");
@@ -699,6 +748,13 @@ function bindWork(u){
   on("wjAddSteel",()=>wGo("mat",{mat:"steel"}));on("wjAddRope",()=>wGo("mat",{mat:"rope"}));on("wjAddOther",()=>wGo("mat",{mat:"other"}));
   on("wjSaveM",()=>wSaveMat(u));
   on("wjStock",()=>wGo("stock"));
+  on("wjAddStock",()=>wGo("addstock",{addType:WS.addType||"steel",addUnit:WS.addUnit||"piece"}));
+  document.querySelectorAll("[data-adty]").forEach(b=>b.onclick=()=>{WS.addType=b.dataset.adty;if(WS.addType==="rope")WS.addUnit="m";render()});
+  document.querySelectorAll("[data-adun]").forEach(b=>b.onclick=()=>{WS.addUnit=b.dataset.adun;render()});
+  document.querySelectorAll(".wjPickIt").forEach(b=>b.onclick=()=>{const el=$("wjItem");if(el)el.value=b.dataset.desc;WS.addType=b.dataset.mat||"steel";if(WS.addType==="rope")WS.addUnit="m";render();const e2=$("wjItem");if(e2)e2.value=b.dataset.desc});
+  document.querySelectorAll(".wjSet").forEach(b=>b.onclick=()=>wGo("setstock",{setDesc:b.dataset.desc,setMat:b.dataset.mat||"steel",addUnit:(b.dataset.mat==="rope"?"m":"piece")}));
+  on("wjSaveAdd",()=>wSaveAdd(u));
+  on("wjSaveSet",()=>wSaveSet(u));
   on("wjOpenPh",()=>{WS.pendingPhoto=null;wGo("photo")});
   on("wjSavePh",()=>wSavePh(u));
   bindPhoto("wjPhPick",d=>{WS.pendingPhoto=d;const im=$("wjPic");if(im){im.src=d;im.style.display="block"}else render();wErr("")});
@@ -730,6 +786,29 @@ function wSaveMat(u){
   if(put("k",kid,{id:kid,ref:"",dir:"out",mat:mat,desc:desc,qty:needQ,len:needL,unit:unit,qThou:Math.round(needQ*1000),lThou:Math.round(needL*1000),at:at,by:u.name,jobId:WS.jobId,example:data.example})===false)return;
   draftClear("wjDesc");draftClear("wjPcs");draftClear("wjLen");afterSave(true);
 }
+function wPackStock(u,dir,needPos){
+  if(!(u&&u.admin)){wErr(t("noAccess"));return null}
+  const desc=(WS.screen==="setstock"?WS.setDesc:(($("wjItem")||{}).value||"")).trim();
+  if(!desc){wErr(t("wjNeedItem"));return null}
+  const qty=wNum(($("wjAddQty")||{}).value);
+  if(qty==null||Number.isNaN(qty)||qty<0||(needPos&&!(qty>0))){wErr(qty==null||qty===0&&needPos?t("wjNeedQty"):t("wjBadNum"));return null}
+  const mat=(WS.screen==="setstock"?WS.setMat:WS.addType)||"steel";
+  const unit=(mat==="rope"?"m":(WS.addUnit||"piece"));
+  const piece=wClass(unit)==="piece",len=wClass(unit)==="len";
+  const q=piece||!len?qty:0,l=len?qty:0,note=(($("wjAddNote")||{}).value||"").trim();
+  const at=new Date().toISOString(),id=(dir==="set"?"kset":"kin")+Date.now();
+  return {id:id,ref:"",dir:dir,mat:mat,desc:desc,qty:q,len:l,unit:unit,qThou:Math.round(q*1000),lThou:Math.round(l*1000),at:at,by:u.name,jobId:"",sourceApp:"admin",note:note};
+}
+function wSaveAdd(u){
+  const data=wPackStock(u,"in",true);if(!data)return;
+  if(put("k",data.id,data)===false)return;
+  draftClear("wjItem");draftClear("wjAddQty");draftClear("wjAddNote");afterSave(true);
+}
+function wSaveSet(u){
+  const data=wPackStock(u,"set",false);if(!data)return;
+  if(put("k",data.id,data)===false)return;
+  draftClear("wjSetQty");draftClear("wjSetNote");afterSave(true);
+}
 function wSavePh(u){
   const had=wPhotos(WS.jobId).length;
   if(!WS.pendingPhoto&&!had){wErr(t("wjNeedPh"));return}
@@ -745,13 +824,13 @@ function wSavePh(u){
 }
 function wsNav(){
   if(wsNav.done||!window.TMC.nav)return;wsNav.done=1;const N=window.TMC.nav;
-  N.keys.push(o=>{if(o.t==="work"){o.sc=WS.screen;o.ji=WS.jobId||"";o.mt=WS.mat||""}return o});
-  N.sets.push(o=>{if(o.sc){WS.screen=o.sc;WS.jobId=o.ji||null;WS.mat=o.mt||null;WS.pendingPhoto=null}});
-  N.ups.push(()=>{if(tab!=="work")return false;let to=null;if(WS.screen==="mat"||WS.screen==="photo")to="job";else if(WS.screen==="job"||WS.screen==="jobform"||WS.screen==="stock")to="list";else return false;WS.screen=to;WS.mat=null;WS.pendingPhoto=null;if(to==="list")WS.jobId=null;N.st=N.st.filter(k=>{try{const o=JSON.parse(k);return !(o.t==="work"&&o.sc&&o.sc!=="list")}catch(e){return true}});return true});
+  N.keys.push(o=>{if(o.t==="work"){o.sc=WS.screen;o.ji=WS.jobId||"";o.mt=WS.mat||"";o.sd=WS.setDesc||"";o.sm=WS.setMat||""}return o});
+  N.sets.push(o=>{if(o.sc){WS.screen=o.sc;WS.jobId=o.ji||null;WS.mat=o.mt||null;WS.setDesc=o.sd||"";WS.setMat=o.sm||null;WS.pendingPhoto=null}});
+  N.ups.push(()=>{if(tab!=="work")return false;let to=null;if(WS.screen==="mat"||WS.screen==="photo")to="job";else if(WS.screen==="addstock"||WS.screen==="setstock")to="stock";else if(WS.screen==="job"||WS.screen==="jobform"||WS.screen==="stock")to="list";else return false;WS.screen=to;WS.mat=null;WS.pendingPhoto=null;if(to!=="setstock"){WS.setDesc="";WS.setMat=null}if(to==="list")WS.jobId=null;N.st=N.st.filter(k=>{try{const o=JSON.parse(k);return !(o.t==="work"&&o.sc&&o.sc!=="list")}catch(e){return true}});return true});
   N.dirty.push(()=>tab==="work"&&WS.screen==="photo"&&!!WS.pendingPhoto);
   N.clear.push(()=>{WS.pendingPhoto=null});
 }
-window.TMC.ws=()=>WS;window.TMC.wBal=(mat,desc)=>wOn(mat,desc);window.TMC.wOn=wOn;
+window.TMC.ws=()=>WS;window.TMC.wBal=(mat,desc)=>wOn(mat,desc);window.TMC.wOn=wOn;window.TMC.wStockItems=wStockItems;
 /* ==================== APP FEATURES END ==================== */
 function canHTML(u){
   if(u.admin)return `<div class="box"><h2>✅ ${esc(t("can"))}</h2><p><b>${esc(t("canAll"))}</b></p></div>`;
