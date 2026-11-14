@@ -68,12 +68,17 @@ def new_job(pg,title,kind):
     pg.click('#wjSave');pg.wait_for_timeout(400)
 def open_job(pg,title):
     work(pg);pg.locator('.wjOpen',has_text=title).first.click();pg.wait_for_timeout(250)
+def mat_amt(pg,row,digits):
+    pg.click('.wjMatCell[data-r="%d"]'%row)
+    for d in str(digits):
+        pg.click('[data-matpad="%s"]'%('dot' if d in '.,' else d))
 def add_mat(pg,kind,desc,pcs,length):
     pg.click({'steel':'#wjAddSteel','rope':'#wjAddRope','other':'#wjAddOther'}[kind]);pg.wait_for_timeout(200)
-    pg.fill('#wjDesc',desc)
-    if pcs is not None:pg.fill('#wjPcs',pcs)
-    if length is not None:pg.fill('#wjLen',length)
-    pg.select_option('#wjUnit','m');pg.click('#wjSaveM');pg.wait_for_timeout(400)
+    pg.locator('.wjMatPick',has_text=desc).first.click();pg.wait_for_timeout(200)
+    row=pg.locator('.wjMatRow').count()-1
+    val=length if length is not None else pcs
+    if val is not None:mat_amt(pg,row,val)
+    pg.click('#wjSaveM');pg.wait_for_timeout(400)
 try:
   with sync_playwright() as pw:
     b=pw.chromium.launch(executable_path='/usr/bin/google-chrome' if os.path.exists('/usr/bin/google-chrome') else None,args=['--no-sandbox'])
@@ -109,7 +114,7 @@ try:
     ok(pg.evaluate("TMC.wBal('steel','EXAMPLE angle iron').qty")==20 and pg.evaluate("TMC.all('k').filter(k=>k.dir==='in').length")==3,'duplicate did not add a second credit')
     pg.click('#view .navBack');pg.wait_for_timeout(250)
     open_job(pg,'EXAMPLE Gate frame')
-    pg.click('#wjAddSteel');pg.wait_for_timeout(200);pg.fill('#wjDesc','EXAMPLE angle iron');pg.fill('#wjPcs','999');pg.fill('#wjLen','1');pg.click('#wjSaveM');pg.wait_for_timeout(300)
+    pg.click('#wjAddSteel');pg.wait_for_timeout(200);pg.locator('.wjMatPick',has_text='EXAMPLE angle iron').first.click();pg.wait_for_timeout(150);mat_amt(pg,0,'999');pg.click('#wjSaveM');pg.wait_for_timeout(300)
     ok(pg.locator('#wjMat').count()==1 and 'Not enough' in pg.inner_text('#wjErr'),'over-allocation stays on the form')
     ok(pg.evaluate("TMC.wBal('steel','EXAMPLE angle iron').qty")==20,'failed save does not deduct stock')
     pg.click('#view .navBack');pg.wait_for_timeout(200)
@@ -119,17 +124,19 @@ try:
     add_mat(pg,'steel','EXAMPLE angle iron','2.5','1.5')
     ok(pg.locator('.wjRow',has_text='EXAMPLE angle iron').count()==2,'repeated steel is kept as two entries')
     tot=pg.inner_text('#wjTot')
-    ok('5 pieces' in tot and '4.5 m' in tot,'steel totals add the repeated pieces and lengths: %s'%tot.replace('\n',' '))
+    ok('4.5 m' in tot and pg.locator('.wjRow',has_text='EXAMPLE angle iron').count()==2,'steel totals add the repeated lengths: %s'%tot.replace('\n',' '))
     add_mat(pg,'rope','EXAMPLE rope',None,'12.5')
     ok('12.5 m' in pg.inner_text('#wjTot'),'decimal rope length 12.5 m is kept')
-    pg.click('#wjAddRope');pg.wait_for_timeout(200);pg.fill('#wjDesc','bad rope');pg.fill('#wjLen','abc');pg.click('#wjSaveM');pg.wait_for_timeout(300)
-    ok(pg.locator('#wjMat').count()==1 and pg.input_value('#wjLen')=='abc','bad length stays on the form')
+    pg.click('#wjAddRope');pg.wait_for_timeout(200);pg.click('#wjSaveM');pg.wait_for_timeout(300)
+    ok(pg.locator('#wjMat').count()==1 and pg.locator('.wjMatRow').count()==0,'save with no item stays on the form')
+    pg.locator('.wjMatPick',has_text='EXAMPLE rope').first.click();pg.wait_for_timeout(150);pg.click('#wjSaveM');pg.wait_for_timeout(300)
+    ok(pg.locator('#wjMat').count()==1 and 'EXAMPLE rope' in pg.inner_text('#wjMatRows'),'save with no length stays on the form and keeps the picked item')
     pg.click('#view .navBack');pg.wait_for_timeout(200)
     if pg.locator('#navAsk').count():pg.click('#navYes');pg.wait_for_timeout(200)
     ok(pg.locator('#wjJob').count()==1,'Back from a bad entry returns to the job')
-    add_mat(pg,'rope','EXAMPLE rope',None,'4,25')
+    add_mat(pg,'rope','EXAMPLE rope',None,'4.25')
     rope=pg.inner_text('#wjTot')
-    ok('16.75 m' in rope,'comma rope length 4,25 adds to 16.75 m')
+    ok('16.75 m' in rope,'decimal rope length 4.25 adds to 16.75 m')
     ok(pg.locator('.wjRow',has_text='EXAMPLE rope').count()==2,'repeated rope lengths are both listed')
     when=pg.inner_text('#wjHist')
     ok(re.search(r'\b(?:[01]\d|2[0-3]):[0-5]\d\b',when) and not re.search(r'\b[AP]M\b',when),'material history uses 24h time')
