@@ -1,3 +1,12 @@
+# TMC Workshop v5 sample (cut list + Send to Assets)
+
+Sample only. Not published. Live phones stay on v4 until Johan says yes.
+
+- Cut list per job: staff add Qty × Length with a big number pad and mm/m. Totals are running metres per item and for all items, plus how many full bar lengths (default 6 m, Admin can change). Saving takes those metres off Workshop stock as ordinary `k` out records linked to the job. No Code.gs change.
+- Staff may only add a cut list. Admin may delete one; the metres taken off stock stay used and do NOT go back into stock.
+- Send to Assets: Workshop-side list of finished items (Waiting for Assets). Source = the existing Build jobs (v4 job records read unchanged). Admin: **Job finished: send to Assets** (job with a cut list) or **Already built (in use)** (add materials + size; *Take off stock* switch, default OFF), with a suggested person taken from the job name (editable). Admin can also **Add item built before** (no job, no stock taken). The future link is designed in `sync/assets-transfer-design.md` and is not connected.
+- Languages EN/FR/AR/AF. Cache `tmcworkshop-v5`. Storage keys still `tmcworkshop_`.
+
 # TMC Workshop v1
 
 Named Build and Repair jobs. Food credits Workshop stock only with `importStockTransfer` (`sourceApp` `fi`, `destinationApp` `tmcworkshop`). Staff allocate that stock onto a job.

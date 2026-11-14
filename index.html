@@ -24,7 +24,7 @@
   "CACHE_PREFIX": "tmcworkshop",
   "NAME": "TMC Workshop",
   "SHORT": "TMC Workshop",
-  "VER": 4,
+  "VER": 5,
   "COLOR": "#b45309",
   "COLOR_DARK": "#7c2d12",
   "REPORT_COLOR": "#1B7F3B",
@@ -41,7 +41,7 @@
     {"id":"export","icon":"📤","en":"Export","fr":"Exporter","ar":"تصدير","af":"Stuur uit"}
   ],
   "PERM_DEFAULT": ["view","add"],
-  "PERM_KINDS": {"x":{"view":"view","add":"add"},"j":{"view":"view","add":"add"},"m":{"view":"view","add":"add"},"p":{"view":"view","add":"add"},"k":{"view":"view","add":"add"},"si":{"view":"view","add":"add"},"hj":{"view":"view","add":"add"},"sb":{"view":"view","add":"add"}}
+  "PERM_KINDS": {"x":{"view":"view","add":"add"},"j":{"view":"view","add":"add"},"m":{"view":"view","add":"add"},"p":{"view":"view","add":"add"},"k":{"view":"view","add":"add"},"si":{"view":"view","add":"add"},"hj":{"view":"view","add":"add"},"sb":{"view":"view","add":"add"},"c":{"view":"view","add":"add"},"fa":{"view":"view","add":"add"},"sl":{"view":"view","add":"add"}}
 }/*END*/;</script>
 <title>TMC Workshop</title>
 <link rel="manifest" href="manifest.json">
@@ -114,7 +114,19 @@ nav.tabs .tlab{display:block;width:100%;font-size:12px;line-height:1.2;text-alig
 .fixB{width:auto;min-width:120px;min-height:56px;background:#b45309;font-size:18px}.fixN{width:100%}
 .dsc h2{color:#b91c1c}.dsc button{min-height:60px;font-size:20px}
 #updGo{position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:18px}#updGo img{width:96px;height:96px;border-radius:20px}#updGo b{font-size:30px;line-height:1.25;color:#0f172a}#updGo span{font-size:20px;color:#475569}#updGo i{width:64px;height:64px;border:7px solid #e2e8f0;border-top-color:#0f766e;border-radius:50%;animation:updSp 1s linear infinite}@keyframes updSp{to{transform:rotate(360deg)}}
-.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;overflow:auto}
+/* Base VER 15 (folded into Workshop v5) — popups/toasts/bars stay fully on screen and never cover the bottom menu (Johan, 11 Nov 2026) */
+:root{--tabh:84px}
+.modal .card{box-sizing:border-box;min-width:0;width:100%;max-width:min(440px,calc(100vw - 16px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto;overflow-wrap:break-word;word-break:normal}
+.modal .card h2,.modal .card h3,.modal .card p,.modal .card b,.modal .card span,.modal .card label,.modal .card small,.modal .card div,.modal .card textarea,.modal .card input{overflow-wrap:break-word;word-break:normal;min-width:0;max-width:100%}
+.modal .card textarea,.modal .card input{box-sizing:border-box}
+#tmcToast{position:fixed!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;bottom:calc(var(--tabh,84px) + env(safe-area-inset-bottom,0px))!important;width:calc(100vw - 16px)!important;max-width:min(440px,calc(100vw - 16px))!important;max-height:calc(100vh - var(--tabh,84px) - env(safe-area-inset-bottom,0px) - 16px)!important;overflow:auto!important;overflow-wrap:break-word!important;word-break:normal!important;box-sizing:border-box!important;z-index:9999}
+.floatBar,.drnote,.bkBar{position:fixed;left:50%;right:auto;transform:translateX(-50%);bottom:calc(var(--tabh,84px) + env(safe-area-inset-bottom,0px));z-index:15;width:calc(100vw - 16px);max-width:min(440px,calc(100vw - 16px));max-height:min(50vh,calc(100vh - var(--tabh,84px) - env(safe-area-inset-bottom,0px) - 16px));overflow:auto;overflow-wrap:break-word;word-break:normal;box-sizing:border-box;background:#fef9c3;border:1px solid #eab308;color:#713f12;border-radius:12px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.18);font-weight:600}
+.floatBar span,.drnote span,.bkBar span{flex:1 1 12em;min-width:min(100%,10em);overflow-wrap:break-word;word-break:normal}
+.floatBar button,.drnote button,.bkBar button{flex:0 1 auto;margin:0;width:auto;max-width:100%;min-height:56px;padding:6px 10px;white-space:normal;overflow-wrap:break-word;word-break:normal}
+#updGo{overflow:auto}#updGo b,#updGo span,.phOv .phMsg{overflow-wrap:break-word;word-break:normal;max-width:100%;min-width:0}
+.bar{max-width:100%;overflow-wrap:break-word;word-break:normal}
+nav.tabs .tlab{word-break:normal;overflow-wrap:normal;hyphens:none;-webkit-hyphens:none}
 .ncW{background:#fee2e2;border:1px solid #dc2626;color:#7f1d1d}
 .qr{width:240px;height:240px;max-width:80vw;max-height:80vw;background:#fff}
 
@@ -141,7 +153,31 @@ html{scroll-padding-bottom:96px}
 #wjMat h2{margin:0 0 4px}
 #wjMat label{margin:2px 0}
 #wjMat textarea{min-height:58px}
-#wjSaveM,#wjSave,#wjSavePh,#wjSaveAdd,#wjSaveSet{scroll-margin-bottom:96px}
+#wjSaveM,#wjSave,#wjSavePh,#wjSaveAdd,#wjSaveSet,#wjSaveCut,#wjSaveFa,#wjSaveLen,#wjSaveReady{scroll-margin-bottom:96px}#wjSendIu{font-size:20px;min-height:64px}.wjFaRow .wjMats{display:block;margin-top:4px;font-size:15px;color:#334155}.wjFaRow .wjMats .wjNum{display:inline-block}.wjIso{unicode-bidi:isolate}.wjIuPre{margin:0 0 2px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;color:#166534;background:#dcfce7;border-radius:8px;padding:4px 8px}#wjInUseBox~#wjPadWrap.off{display:none}#wjInUseBox.padOff .wjPadSpace{height:16px}.wjIuRow input{min-height:56px;font-size:18px;margin:0}.wjTake{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;background:#e2e8f0;color:#0f172a;font-size:20px;font-weight:800;justify-content:flex-start;padding:8px 14px;margin-top:10px}.wjTake .wjTgl{flex:0 0 auto;width:56px;height:32px;border-radius:16px;background:#94a3b8;position:relative}.wjTake .wjTgl:after{content:"";position:absolute;top:4px;inset-inline-start:4px;width:24px;height:24px;border-radius:50%;background:#fff}.wjTake.on{background:#fed7aa}.wjTake.on .wjTgl{background:var(--c)}.wjTake.on .wjTgl:after{inset-inline-start:28px}.wjFaRow .wjWho{display:block;margin-top:4px;font-size:16px;color:#0f172a}.wjFaRow .wjEditFa{display:block;margin-top:6px}
+#wjAssets,#wjAddBefore,#wjCutNew,#wjMarkReady,#wjInUse{font-size:20px;min-height:64px}#wjAddRow{scroll-margin-top:88px;scroll-margin-bottom:calc(340px + env(safe-area-inset-bottom,0px))}
+.wjCutRow{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:2px 0;padding:4px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;direction:ltr;scroll-margin-top:88px;scroll-margin-bottom:calc(320px + env(safe-area-inset-bottom,0px))}
+.wjCutRow label{margin:0 0 2px;font-size:13px;font-weight:700;color:#475569;line-height:1.2}
+.wjCutCell{display:flex;align-items:center;justify-content:center;min-height:56px;font-size:28px;font-weight:800;color:#0f172a;border:2px solid #94a3b8;border-radius:10px;background:#fff;margin:2px 0;direction:ltr;unicode-bidi:isolate}
+.wjCutCell.on{border-color:var(--c);background:#fff7ed;color:#0f172a;box-shadow:0 0 0 3px rgba(180,83,9,.25)}.wjCutCell .wjPh{color:#94a3b8;font-weight:700;font-size:24px}
+.wjCutUnits{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:stretch}
+.wjCutUnits button{margin:0;min-height:56px;font-size:18px;font-weight:800;background:#e2e8f0;color:#0f172a}.wjCutUnits button.on{background:var(--c);color:#fff}
+.wjCutUnits .wjDelRow{width:auto;min-width:64px;padding:8px;font-size:15px}
+#wjPadWrap{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:6;background:#fff;padding:4px 0 4px;margin:4px -4px 0;border-top:2px solid #cbd5e1}
+#wjPad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;direction:ltr}
+#wjPad button{margin:0;min-height:56px;font-size:24px;font-weight:800}
+#wjPad .wjPadOk{grid-column:1/-1;font-size:20px;min-height:56px}
+#wjCutSum{background:#fff7ed;border:2px solid #fdba74;border-radius:12px;padding:12px;margin:8px 0;scroll-margin-top:88px;scroll-margin-bottom:calc(340px + env(safe-area-inset-bottom,0px))}
+#wjCutSum p{margin:4px 0;font-size:17px;font-weight:700;line-height:1.35}
+#wjCutSum .wjBig{font-size:20px;font-weight:800;color:var(--c);line-height:1.35}#wjCutSum .wjPer{font-size:15px;font-weight:600;color:#475569;margin-top:0}#wjCutSum .wjFx{unicode-bidi:isolate;direction:ltr}#wjCutSum b{unicode-bidi:isolate;display:inline-block;max-width:100%;vertical-align:baseline}
+#wjSaveCut{scroll-margin-top:88px;scroll-margin-bottom:calc(340px + env(safe-area-inset-bottom,0px))}
+.wjPadSpace{height:300px}
+#wjCutRows{scroll-margin-top:88px;scroll-margin-bottom:calc(340px + env(safe-area-inset-bottom,0px))}
+.wjFaRow .st{display:inline-block;margin-top:4px;margin-inline-end:6px;padding:2px 8px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:14px;font-weight:700}#wjDelCutAsk .card{padding:20px;max-width:360px}#wjDelCutAsk h2{font-size:24px;font-weight:800;line-height:1.3}#wjDelCutAsk .wjStay{margin:10px 0 16px;font-size:20px;font-weight:800;color:#0f172a;line-height:1.35}
+.wjFaRow .st.before{background:#e0f2fe;color:#075985}
+.wjNum{direction:ltr;unicode-bidi:isolate;display:inline-block}
+#wjStockLenBox label,#wjBeforeBox label,#wjCut label{margin:2px 0}
+#wjAddBefore{background:var(--c)}
+
 #wjPicks{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
 #wjPicks button{width:auto;min-height:56px;padding:8px 14px;margin:0;font-size:16px}
 .wjHold{align-items:center}
@@ -367,7 +403,7 @@ function render(){
   <nav class="tabs">${tabsOf(u).map(x=>navBtn(...x)).join("")}</nav>`;
   bindMain(u);paintSync();paintUpd();fitTabs();
 }
-function fitTabs(){document.querySelectorAll("nav.tabs .tlab").forEach(el=>{el.style.fontSize="";el.style.textOverflow="";let fs=parseFloat(getComputedStyle(el).fontSize)||12;const min=6.5;while(el.scrollWidth>el.clientWidth+0.5&&fs>min){fs=Math.max(min,Math.round((fs-0.5)*10)/10);el.style.fontSize=fs+"px"}if(el.scrollWidth>el.clientWidth+0.5)el.style.textOverflow="ellipsis"})}
+function fitTabs(){document.querySelectorAll("nav.tabs .tlab").forEach(el=>{el.style.fontSize="";el.style.textOverflow="";let fs=parseFloat(getComputedStyle(el).fontSize)||12;const min=6.5;while(el.scrollWidth>el.clientWidth+0.5&&fs>min){fs=Math.max(min,Math.round((fs-0.5)*10)/10);el.style.fontSize=fs+"px"}if(el.scrollWidth>el.clientWidth+0.5)el.style.textOverflow="ellipsis"});const n=document.querySelector("nav.tabs");if(n)document.documentElement.style.setProperty("--tabh",(n.offsetHeight+12)+"px")}
 window.addEventListener("resize",fitTabs);
 window.TMC.fitTabs=fitTabs;
 /* ONE list feeds the bottom tabs AND the Home tiles (same screens, icons, names, order) */
@@ -625,9 +661,10 @@ Object.assign(T.en,{wjTitle:"Jobs",wjNew:"New job",wjNone:"No jobs yet. Tap New 
 Object.assign(T.fr,{wjTitle:"Travaux",wjNew:"Nouveau travail",wjNone:"Pas encore de travail. Touchez Nouveau travail.",wjNoneF:"Aucun travail de ce type.",wjSample:"Exemple seulement. L'acier, la corde et la photo restent sur ce travail.",wjAll:"Tous",wjBuild:"Construction",wjRepair:"Réparation",wjName:"Nom du travail",wjNameH:"Nom du travail",wjType:"Construction ou réparation",wjNeed:"Écrivez le nom du travail.",wjSave:"Enregistrer le travail",wjSteel:"Ajouter acier",wjRope:"Ajouter corde",wjOther:"Ajouter autre",wjDesc:"Ce qui a été utilisé",wjDescH:"Description",wjPcs:"Pièces",wjLen:"Longueur",wjUnit:"Unité",wjNeedDesc:"Écrivez ce qui a été utilisé.",wjNeedPcs:"Écrivez le nombre de pièces.",wjNeedLen:"Écrivez la longueur.",wjBadNum:"Utilisez un nombre comme 2 ou 12,5.",wjSaveM:"Enregistrer",wjTot:"Sur ce travail",wjSteelTot:"Acier",wjRopeTot:"Corde",wjOtherTot:"Autre",wjHist:"Matériel utilisé",wjNoMat:"Rien chargé sur ce travail.",wjPhoto:"Photo finie",wjPhotoH:"Prenez ou envoyez la photo du travail fini.",wjNeedPh:"Prenez ou envoyez une photo d'abord.",wjSavePh:"Enregistrer la photo",wjDone:"Fini",wjOpenJob:"Pas de photo",wjEx:"EXEMPLE",wjPcsU:"pièces",wjWhen:"Enregistré",wjStock:"Stock atelier",wjStockH:"Le stock vient de Food et des articles ajoutés par l'Admin.",wjQueue:"Mettre un exemple Food en file",wjQueued:"En file",wjReceived:"Reçu",wjReceive:"Recevoir",wjOnHand:"En stock",wjNoneSt:"Pas encore de stock.",wjAudit:"Historique du stock",wjShort:"Pas assez dans le stock atelier.",wjIn:"Entrée Food",wjOut:"Utilisé sur un travail",wjHave:"En stock maintenant",wjNoneRec:"Rien reçu encore.",wjAddSt:"Ajouter du stock",wjAddStH:"Écrivez l'article, le nombre, et enregistrez.",wjItem:"Nom de l'article",wjItemH:"Nom de l'article",wjPick:"Ou choisissez un article déjà en stock",wjMatType:"Type",wjQty:"Quantité",wjNote:"Note (facultatif)",wjNeedItem:"Écrivez le nom de l'article.",wjNeedQty:"Écrivez le nombre.",wjSaveAdd:"Enregistrer le stock",wjSet:"Fixer le nombre",wjSetT:"Fixer le nombre",wjSetH:"Écrivez le nombre en stock maintenant.",wjSaveSet:"Enregistrer le nombre",wjInAdmin:"Ajouté par l'Admin",wjSetAud:"Nombre fixé",wjMUnit:"mètres"});
 Object.assign(T.af,{wjTitle:"Werke",wjNew:"Nuwe werk",wjNone:"Nog geen werk nie. Tik Nuwe werk.",wjNoneF:"Geen werk van hierdie soort nie.",wjSample:"Net 'n voorbeeld. Staal, tou en die foto bly op hierdie werk.",wjAll:"Alles",wjBuild:"Bou",wjRepair:"Herstel",wjName:"Werknaam",wjNameH:"Werknaam",wjType:"Bou of herstel",wjNeed:"Tik die werknaam.",wjSave:"Stoor werk",wjSteel:"Voeg staal by",wjRope:"Voeg tou by",wjOther:"Voeg ander by",wjDesc:"Wat gebruik is",wjDescH:"Beskrywing",wjPcs:"Stukke",wjLen:"Lengte",wjUnit:"Eenheid",wjNeedDesc:"Tik wat gebruik is.",wjNeedPcs:"Tik hoeveel stukke.",wjNeedLen:"Tik die lengte.",wjBadNum:"Gebruik 'n nommer soos 2 of 12.5.",wjSaveM:"Stoor materiaal",wjTot:"Op hierdie werk",wjSteelTot:"Staal",wjRopeTot:"Tou",wjOtherTot:"Ander",wjHist:"Materiaal gebruik",wjNoMat:"Nog niks op hierdie werk nie.",wjPhoto:"Klaar foto",wjPhotoH:"Neem of laai die foto van die klaar werk.",wjNeedPh:"Neem of laai eers 'n foto.",wjSavePh:"Stoor foto",wjDone:"Klaar",wjOpenJob:"Nog geen foto nie",wjEx:"VOORBEELD",wjPcsU:"stukke",wjWhen:"Gestoor",wjStock:"Werkswinkel voorraad",wjStockH:"Voorraad kom van Food en van items wat die Admin byvoeg.",wjQueue:"Sit Food voorbeeld in die ry",wjQueued:"In die ry",wjReceived:"Ontvang",wjReceive:"Ontvang dit",wjOnHand:"Op hande",wjNoneSt:"Nog geen voorraad nie.",wjAudit:"Voorraad storie",wjShort:"Nie genoeg in die werkswinkel voorraad nie.",wjIn:"In van Food",wjOut:"Gebruik op 'n werk",wjHave:"Nou op hande",wjNoneRec:"Nog niks ontvang nie.",wjAddSt:"Voeg voorraad by",wjAddStH:"Tik die item, hoeveel, en stoor.",wjItem:"Itemnaam",wjItemH:"Itemnaam",wjPick:"Of kies een wat al in voorraad is",wjMatType:"Soort",wjQty:"Hoeveelheid",wjNote:"Nota (opsioneel)",wjNeedItem:"Tik die itemnaam.",wjNeedQty:"Tik hoeveel.",wjSaveAdd:"Stoor voorraad",wjSet:"Stel hoeveelheid",wjSetT:"Stel hoeveelheid",wjSetH:"Tik die getal wat nou in voorraad is.",wjSaveSet:"Stoor hoeveelheid",wjInAdmin:"Bygevoeg deur die Admin",wjSetAud:"Hoeveelheid gestel",wjMUnit:"meter"});
 Object.assign(T.ar,{wjTitle:"الأعمال",wjNew:"عمل جديد",wjNone:"لا يوجد عمل بعد. اضغط على عمل جديد.",wjNoneF:"لا يوجد عمل من هذا النوع.",wjSample:"هذا مثال فقط. الحديد والحبل والصورة تبقى على هذا العمل.",wjAll:"الكل",wjBuild:"بناء",wjRepair:"تصليح",wjName:"اسم العمل",wjNameH:"اسم العمل",wjType:"بناء أو تصليح",wjNeed:"اكتب اسم العمل.",wjSave:"حفظ العمل",wjSteel:"إضافة حديد",wjRope:"إضافة حبل",wjOther:"إضافة شيء آخر",wjDesc:"ما الذي استُخدم",wjDescH:"الوصف",wjPcs:"قطع",wjLen:"الطول",wjUnit:"الوحدة",wjNeedDesc:"اكتب ما الذي استُخدم.",wjNeedPcs:"اكتب عدد القطع.",wjNeedLen:"اكتب الطول.",wjBadNum:"استخدم رقماً مثل 2 أو 12.5.",wjSaveM:"حفظ المادة",wjTot:"في هذا العمل",wjSteelTot:"حديد",wjRopeTot:"حبل",wjOtherTot:"أخرى",wjHist:"المواد المستخدمة",wjNoMat:"لم يُحمَّل شيء على هذا العمل بعد.",wjPhoto:"صورة العمل المنتهي",wjPhotoH:"التقط أو أرسل صورة العمل المنتهي.",wjNeedPh:"التقط أو أرسل صورة أولاً.",wjSavePh:"حفظ الصورة",wjDone:"منتهٍ",wjOpenJob:"لا توجد صورة بعد",wjEx:"مثال",wjPcsU:"قطع",wjWhen:"محفوظ",wjStock:"مخزون الورشة",wjStockH:"المخزون يأتي من Food ومن ما يضيفه Admin أيضاً.",wjQueue:"مثال طابور من Food",wjQueued:"في الانتظار",wjReceived:"تم الاستلام",wjReceive:"استلام",wjOnHand:"المتوفر",wjNoneSt:"لا يوجد مخزون بعد.",wjAudit:"سجل المخزون",wjShort:"لا يكفي في مخزون الورشة.",wjIn:"وارد من Food",wjOut:"استُخدم في عمل",wjHave:"المتوفر الآن",wjNoneRec:"لم يُستلم شيء بعد.",wjAddSt:"إضافة مخزون",wjAddStH:"اكتب الصنف والعدد ثم احفظ.",wjItem:"اسم الصنف",wjItemH:"اسم الصنف",wjPick:"أو اختر صنفاً موجوداً في المخزون",wjMatType:"النوع",wjQty:"الكمية",wjNote:"ملاحظة (اختياري)",wjNeedItem:"اكتب اسم الصنف.",wjNeedQty:"اكتب الكمية.",wjSaveAdd:"حفظ المخزون",wjSet:"تحديد العدد",wjSetT:"تحديد العدد",wjSetH:"اكتب العدد الموجود في المخزون الآن.",wjSaveSet:"حفظ العدد",wjInAdmin:"أضافه Admin",wjSetAud:"تحديد العدد",wjMUnit:"متر"});
-const WS={screen:"list",flt:"all",jobId:null,mat:null,type:"build",addType:"steel",addUnit:"piece",setDesc:"",setMat:null,pendingPhoto:null,thumbs:{},err:""};
+Object.assign(T.en,{wjCut:"Cut list",wjCutNew:"Add cut list",wjCutH:"Add the pieces you cut for one item. We multiply by how many you make.",wjCutMat:"Material",wjNeedMat:"Pick the material from Workshop stock.",wjAddRow:"Add a cut",wjDelRow:"Remove",wjNeedCut:"Add at least one cut.",wjNeedQtyLen:"Type how many and the length.",wjPerUnit:"Per item",wjAllUnits:"For all items",wjLengths:"Full lengths",wjMm:"mm",wjM:"m",wjPadOk:"OK",wjSaveCut:"Save cut list",wjNoCut:"No cut list yet.",wjCuts:"Cut lists",wjStockLen:"Sold in lengths of",wjStockLenH:"Length of one full bar. Default is 6 m.",wjStockLenT:"Bar length",wjSaveLen:"Save bar length",wjNeedStockLen:"Type the bar length.",wjSetLen:"Set bar length",wjNoneM:"No material in metres yet. Admin can add stock in metres.",wjYouUsed:"You used",wjOf:"of",wjMade:"Item made",wjMadeH:"Bed, table, …",wjUnits:"How many",wjSize:"Size or description (optional)",wjSizeH:"Size or description",wjAssets:"Send to Assets",wjAssetsH:"Finished items waiting to go to Assets. Not connected yet.",wjNoneFa:"No finished items yet.",wjWaitAssets:"Waiting for Assets",wjMarkReady:"Job finished: send to Assets",wjReadyH:"This job's item goes on the Send to Assets list. Check the item and the person, then save.",wjRdItem:"Item",wjPerson:"Who has it (suggested)",wjPersonH:"Name of the person",wjSaveReady:"Save to Send to Assets",wjEditFa:"Edit",wjInUse:"Already built (in use)",wjInUseH:"Add the materials and the size, then tap Send to Assets.",wjIuMats:"Materials",wjIuType:"Material (steel type or rope)",wjIuTypeH:"Square tubing, rope, …",wjIuAmt:"Metres",wjIuAdd:"Add material",wjTake:"Take off stock",wjTakeOff:"OFF: built before, no stock is taken.",wjTakeOn:"ON: these metres come off Workshop stock.",wjSizeEx:"2 m x 1 m",wjNeedIu:"Type the material and the metres.",wjNotStock:"Not in Workshop stock: %n",wjIuMatsL:"Materials",wjIuTook:"Taken off stock",wjIuPre:"✓ From this job – already counted",wjNoPerson:"No person yet",wjMarked:"Already on the Assets list",wjDelCut:"Delete cut list",wjFaJob:"Job",wjBuiltBefore:"Built before",wjAddBefore:"Add item built before",wjAddBeforeH:"Add an item that was built before. It goes on the Assets list. No stock is taken.",wjSaveBefore:"Save item",wjNeedBefore:"Type the item name.",wjNeedBeforeQty:"Type how many.",wjNoJob:"No job",wjDelCutQ:"Delete this cut list?",wjStayUsed:"The metres stay used. They do not go back into stock.",wjUsedHead:"You used %n of %m",wjPerItem:"per item"});Object.assign(T.fr,{wjCut:"Liste de coupe",wjCutNew:"Ajouter une liste de coupe",wjCutH:"Ajoutez les morceaux coupés pour un article. Nous multiplions par le nombre que vous faites.",wjCutMat:"Matériel",wjNeedMat:"Choisissez le matériel dans le stock atelier.",wjAddRow:"Ajouter une coupe",wjDelRow:"Retirer",wjNeedCut:"Ajoutez au moins une coupe.",wjNeedQtyLen:"Écrivez le nombre et la longueur.",wjPerUnit:"Par article",wjAllUnits:"Pour tous les articles",wjLengths:"Longueurs entières",wjMm:"mm",wjM:"m",wjPadOk:"OK",wjSaveCut:"Enregistrer la liste",wjNoCut:"Pas encore de liste de coupe.",wjCuts:"Listes de coupe",wjStockLen:"Vendu en longueurs de",wjStockLenH:"Longueur d'une barre entière. Par défaut 6 m.",wjStockLenT:"Longueur de barre",wjSaveLen:"Enregistrer la longueur",wjNeedStockLen:"Écrivez la longueur de barre.",wjSetLen:"Fixer la longueur",wjNoneM:"Pas encore de matériel en mètres. L'Admin peut ajouter du stock en mètres.",wjYouUsed:"Vous avez utilisé",wjOf:"de",wjMade:"Article fabriqué",wjMadeH:"Lit, table, …",wjUnits:"Combien",wjSize:"Taille ou description (facultatif)",wjSizeH:"Taille ou description",wjAssets:"Envoyer à Assets",wjAssetsH:"Articles finis en attente pour Assets. Pas encore connecté.",wjNoneFa:"Pas encore d'articles finis.",wjWaitAssets:"En attente d'Assets",wjMarkReady:"Travail fini : envoyer à Assets",wjReadyH:"L'article de ce travail va sur la liste Envoyer à Assets. Vérifiez l'article et la personne, puis enregistrez.",wjRdItem:"Article",wjPerson:"Qui l'a (suggéré)",wjPersonH:"Nom de la personne",wjSaveReady:"Enregistrer pour Assets",wjEditFa:"Modifier",wjInUse:"Déjà fabriqué (en service)",wjInUseH:"Ajoutez les matériaux et la taille, puis touchez Envoyer à Assets.",wjIuMats:"Matériaux",wjIuType:"Matériel (type d'acier ou corde)",wjIuTypeH:"Tube carré, corde, …",wjIuAmt:"Mètres",wjIuAdd:"Ajouter un matériel",wjTake:"Retirer du stock",wjTakeOff:"NON : fabriqué avant, aucun stock n'est pris.",wjTakeOn:"OUI : ces mètres sortent du stock atelier.",wjSizeEx:"2 m x 1 m",wjNeedIu:"Écrivez le matériel et les mètres.",wjNotStock:"Pas dans le stock atelier : %n",wjIuMatsL:"Matériaux",wjIuTook:"Retiré du stock",wjIuPre:"✓ De ce travail – déjà compté",wjNoPerson:"Pas encore de personne",wjMarked:"Déjà sur la liste Assets",wjDelCut:"Supprimer la liste de coupe",wjFaJob:"Travail",wjBuiltBefore:"Fabriqué avant",wjAddBefore:"Ajouter un article fabriqué avant",wjAddBeforeH:"Ajoutez un article fabriqué avant. Il va sur la liste Assets. Aucun stock n'est pris.",wjSaveBefore:"Enregistrer l'article",wjNeedBefore:"Écrivez le nom de l'article.",wjNeedBeforeQty:"Écrivez le nombre.",wjNoJob:"Pas de travail",wjDelCutQ:"Supprimer cette liste de coupe ?",wjStayUsed:"Les mètres restent utilisés. Ils ne retournent pas dans le stock.",wjUsedHead:"Vous avez utilisé %n de %m",wjPerItem:"par article"});Object.assign(T.af,{wjCut:"Snylys",wjCutNew:"Voeg snylys by",wjCutH:"Voeg die stukke by wat jy vir een item sny. Ons vermenigvuldig met hoeveel jy maak.",wjCutMat:"Materiaal",wjNeedMat:"Kies die materiaal uit die werkswinkel voorraad.",wjAddRow:"Voeg 'n sny by",wjDelRow:"Haal weg",wjNeedCut:"Voeg ten minste een sny by.",wjNeedQtyLen:"Tik hoeveel en die lengte.",wjPerUnit:"Per item",wjAllUnits:"Vir al die items",wjLengths:"Volle lengtes",wjMm:"mm",wjM:"m",wjPadOk:"OK",wjSaveCut:"Stoor snylys",wjNoCut:"Nog geen snylys nie.",wjCuts:"Snylyste",wjStockLen:"Verkoop in lengtes van",wjStockLenH:"Lengte van een volle staaf. Standaard is 6 m.",wjStockLenT:"Staaflengte",wjSaveLen:"Stoor staaflengte",wjNeedStockLen:"Tik die staaflengte.",wjSetLen:"Stel staaflengte",wjNoneM:"Nog geen materiaal in meter nie. Die Admin kan voorraad in meter byvoeg.",wjYouUsed:"Julle het gebruik",wjOf:"van",wjMade:"Item gemaak",wjMadeH:"Bed, tafel, …",wjUnits:"Hoeveel",wjSize:"Grootte of beskrywing (opsioneel)",wjSizeH:"Grootte of beskrywing",wjAssets:"Stuur na Assets",wjAssetsH:"Klaar items wat wag om na Assets te gaan. Nog nie gekoppel nie.",wjNoneFa:"Nog geen klaar items nie.",wjWaitAssets:"Wag vir Assets",wjMarkReady:"Werk klaar: stuur na Assets",wjReadyH:"Hierdie werk se item gaan op die Stuur na Assets-lys. Kyk die item en die persoon na en stoor dan.",wjRdItem:"Item",wjPerson:"Wie het dit (voorstel)",wjPersonH:"Naam van die persoon",wjSaveReady:"Stoor vir Assets",wjEditFa:"Verander",wjInUse:"Reeds gebou (in gebruik)",wjInUseH:"Voeg die materiaal en die grootte by, tik dan Stuur na Assets.",wjIuMats:"Materiaal",wjIuType:"Materiaal (staalsoort of tou)",wjIuTypeH:"Vierkantbuis, tou, …",wjIuAmt:"Meter",wjIuAdd:"Voeg materiaal by",wjTake:"Haal van voorraad af",wjTakeOff:"AF: voorheen gebou, geen voorraad word gevat nie.",wjTakeOn:"AAN: hierdie meters gaan van Werkswinkel-voorraad af.",wjSizeEx:"2 m x 1 m",wjNeedIu:"Tik die materiaal en die meters.",wjNotStock:"Nie in Werkswinkel-voorraad nie: %n",wjIuMatsL:"Materiaal",wjIuTook:"Van voorraad afgehaal",wjIuPre:"✓ Van hierdie werk – reeds getel",wjNoPerson:"Nog geen persoon nie",wjMarked:"Reeds op die Assets-lys",wjDelCut:"Skrap snylys",wjFaJob:"Werk",wjBuiltBefore:"Voorheen gebou",wjAddBefore:"Voeg item by wat voorheen gebou is",wjAddBeforeH:"Voeg 'n item by wat voorheen gebou is. Dit gaan op die Assets-lys. Geen voorraad word gevat nie.",wjSaveBefore:"Stoor item",wjNeedBefore:"Tik die itemnaam.",wjNeedBeforeQty:"Tik hoeveel.",wjNoJob:"Geen werk",wjDelCutQ:"Skrap hierdie snylys?",wjStayUsed:"Die meters bly gebruik. Hulle gaan nie terug in voorraad nie.",wjUsedHead:"Julle het %n van %m gebruik",wjPerItem:"per item"});Object.assign(T.ar,{wjCut:"قائمة القص",wjCutNew:"إضافة قائمة قص",wjCutH:"أضف القطع التي قصصتها لقطعة واحدة. نضرب في عدد ما تصنعه.",wjCutMat:"المادة",wjNeedMat:"اختر المادة من مخزون الورشة.",wjAddRow:"إضافة قصّة",wjDelRow:"حذف",wjNeedCut:"أضف قصّة واحدة على الأقل.",wjNeedQtyLen:"اكتب العدد والطول.",wjPerUnit:"لكل قطعة",wjAllUnits:"لكل القطع",wjLengths:"الأطوال الكاملة",wjMm:"مم",wjM:"م",wjPadOk:"حسنًا",wjSaveCut:"حفظ قائمة القص",wjNoCut:"لا توجد قائمة قص بعد.",wjCuts:"قوائم القص",wjStockLen:"يُباع بأطوال",wjStockLenH:"طول العود الكامل. الافتراضي 6 م.",wjStockLenT:"طول العود",wjSaveLen:"حفظ طول العود",wjNeedStockLen:"اكتب طول العود.",wjSetLen:"تحديد طول العود",wjNoneM:"لا توجد مادة بالأمتار بعد. يمكن لـ Admin إضافة مخزون بالأمتار.",wjYouUsed:"استُخدم",wjOf:"من",wjMade:"القطعة المصنوعة",wjMadeH:"سرير، طاولة، …",wjUnits:"العدد",wjSize:"المقاس أو الوصف (اختياري)",wjSizeH:"المقاس أو الوصف",wjAssets:"إرسال إلى Assets",wjAssetsH:"قطع منتهية بانتظار الإرسال إلى Assets. غير متصل بعد.",wjNoneFa:"لا توجد قطع منتهية بعد.",wjWaitAssets:"بانتظار Assets",wjMarkReady:"انتهى العمل: إرسال إلى Assets",wjReadyH:"قطعة هذا العمل تذهب إلى قائمة الإرسال إلى Assets. تحقق من القطعة والشخص ثم احفظ.",wjRdItem:"القطعة",wjPerson:"من يملكها (مقترح)",wjPersonH:"اسم الشخص",wjSaveReady:"حفظ للإرسال إلى Assets",wjEditFa:"تعديل",wjInUse:"مصنوع مسبقاً (قيد الاستخدام)",wjInUseH:"أضف المواد والمقاس، ثم اضغط إرسال إلى Assets.",wjIuMats:"المواد",wjIuType:"المادة (نوع الحديد أو الحبل)",wjIuTypeH:"أنبوب مربع، حبل، …",wjIuAmt:"أمتار",wjIuAdd:"إضافة مادة",wjTake:"خصم من المخزون",wjTakeOff:"مطفأ: مصنوع سابقاً، لا يُخصم مخزون.",wjTakeOn:"مفعّل: هذه الأمتار تُخصم من مخزون الورشة.",wjSizeEx:"2 m x 1 m",wjNeedIu:"اكتب المادة والأمتار.",wjNotStock:"غير موجود في مخزون الورشة: %n",wjIuMatsL:"المواد",wjIuTook:"خُصم من المخزون",wjIuPre:"✓ من هذا العمل – محسوب مسبقاً",wjNoPerson:"لا يوجد شخص بعد",wjMarked:"موجود بالفعل في قائمة Assets",wjDelCut:"حذف قائمة القص",wjFaJob:"العمل",wjBuiltBefore:"صُنع سابقاً",wjAddBefore:"إضافة قطعة صُنعت سابقاً",wjAddBeforeH:"أضف قطعة صُنعت سابقاً. تذهب إلى قائمة Assets. لا يُخصم مخزون.",wjSaveBefore:"حفظ القطعة",wjNeedBefore:"اكتب اسم القطعة.",wjNeedBeforeQty:"اكتب العدد.",wjNoJob:"بدون عمل",wjDelCutQ:"حذف قائمة القص هذه؟",wjStayUsed:"الأمتار تبقى مستخدمة. لا تعود إلى المخزون.",wjUsedHead:"استُخدم %n من %m",wjPerItem:"لكل قطعة"});
+const WS={screen:"list",flt:"all",jobId:null,mat:null,type:"build",addType:"steel",addUnit:"piece",setDesc:"",setMat:null,pendingPhoto:null,thumbs:{},err:"",cutRows:[],cutPad:{row:0,field:"qty"},cutDesc:"",cutItem:"",cutUnits:"1",cutSize:""};
 function wNum(s){const t=String(s==null?"":s).trim().replace(/\s/g,"").replace(",",".");if(!t)return null;if(!/^\d+(\.\d+)?$/.test(t))return NaN;return +t}
-function wFmt(n){if(n==null||!isFinite(+n))return "";const r=Math.round(+n*1000)/1000;return String(r)}
+function wFmt(n){if(n==null||!isFinite(+n))return "";const r=Math.round(+n*1000)/1000;const s=String(r);return (lang==="fr"||lang==="af")?s.replace(".",","):s}
 function wEx(r){return !!(r&&(r.example||/^example\b/i.test(String(r.name||r.desc||""))))}
 function wWhen(at){const d=new Date(at);if(!at||isNaN(d.getTime()))return "";const day=d.toDateString()===new Date().toDateString()?"":d.toLocaleDateString(dLoc(),{day:"numeric",month:"short"})+" ";return day+hm(d)}
 function wJob(id){return all("j").find(j=>j.id===id)||null}
@@ -651,6 +688,198 @@ function wMatLab(mat){return mat==="rope"?t("wjRopeTot"):mat==="steel"?t("wjStee
 addReport({id:"wjobs",title:{en:"Materials per job",fr:"Matériel par travail",af:"Materiaal per werk",ar:"المواد حسب العمل"},
  cols:[{key:"date",label:{en:"Date",fr:"Date",af:"Datum",ar:"التاريخ"}},{key:"job",label:{en:"Job",fr:"Travail",af:"Werk",ar:"العمل"}},{key:"steel",label:{en:"Steel",fr:"Acier",af:"Staal",ar:"حديد"},num:true,sum:true},{key:"rope",label:{en:"Rope m",fr:"Corde m",af:"Tou m",ar:"حبل م"},num:true,d:1,sum:true}],
  rows:(f,to)=>{return all("j").filter(j=>{const d=j.at?ymd(new Date(j.at)):"";return d&&d>=f&&d<=to}).sort((a,b)=>String(a.at).localeCompare(String(b.at))).map(j=>{const ms=all("m").filter(m=>m.jobId===j.id);const steel=ms.filter(m=>m.mat==="steel").reduce((s,m)=>s+(+m.qty||0),0);const rope=ms.filter(m=>m.mat==="rope").reduce((s,m)=>s+(+m.len||0),0);return {date:ymd(new Date(j.at)),job:j.name||"",steel:steel,rope:Math.round(rope*10)/10}})}});
+
+function wStockLenMm(desc){const rec=all("sl").find(x=>foldName(x.desc)===foldName(desc));const n=rec&&+rec.stockLenMm;return n>0?Math.round(n):6000}
+function wStockLenId(desc){return "sl-"+foldName(desc).replace(/[^a-z0-9]+/g,"-").slice(0,40)}
+function wRowMm(r){const q=Math.round(wNum(r.qty)||0);if(!(q>0))return 0;const len=wNum(r.len);if(!(len>0))return 0;const u=r.unit||"m";const one=u==="mm"?Math.round(len):u==="cm"?Math.round(len*10):Math.round(len*1000);return q*one}
+function cutPlan(rows,units,stockLenMm){const perMm=(rows||[]).reduce((s,r)=>s+wRowMm(r),0);const u=Math.max(1,Math.round(wNum(units)||1));const bar=stockLenMm>0?Math.round(stockLenMm):6000;const totalMm=perMm*u;return {perMm:perMm,units:u,totalMm:totalMm,stockLenMm:bar,bars:totalMm>0?Math.ceil(totalMm/bar):0,totalM:totalMm/1000,perM:perMm/1000}}
+function wMtxt(n){return wFmt(n)+" m"}
+function wCuts(jobId){return all("c").filter(c=>c.jobId===jobId).sort((a,b)=>String(b.at).localeCompare(String(a.at)))}
+function wFa(jobId){return all("fa").filter(f=>f.jobId===jobId)}
+function wEnsureSl(desc,mm){if(!desc)return;const id=wStockLenId(desc),cur=all("sl").find(x=>x.id===id||foldName(x.desc)===foldName(desc));if(cur)return;const n=mm>0?Math.round(mm):6000;put("sl",id,{id:id,desc:desc,stockLenMm:n,at:new Date().toISOString(),by:(me()||{}).name||""})}
+function wMetreItems(){return wStockItems().filter(r=>{let hasL=false;wMoves(r.desc).forEach(k=>{if(wClass(k.unit)==="len"||+k.len)hasL=true});return hasL||wStockLenMm(r.desc)>0&&r.bal.len>0||hasL})}
+function wOpenCut(){const j=wJob(WS.jobId)||{};WS.cutRows=[{qty:"",len:"",unit:"m"}];WS.cutPad={row:0,field:"qty"};WS.cutDesc="";WS.cutItem=j.item||"";WS.cutUnits=(j.units>0?String(j.units):"1");WS.cutSize=j.size||"";wGo("cut")}
+function wPadKey(k){const p=WS.cutPad||{row:0,field:"qty"};const r=WS.cutRows[p.row];if(!r)return;const f=p.field==="len"?"len":"qty";let v=String(r[f]||"");if(k==="bk")v=v.slice(0,-1);else if(k==="dot"){if(f==="qty")return;if(!v)v="0";if(v.indexOf(".")<0&&v.indexOf(",")<0)v+=(lang==="fr"||lang==="af"?",":".")}else if(/^\d$/.test(k)){if(f==="qty"&&v==="0")v=k;else v+=k}r[f]=v;wPaintCut()}
+function wScrollCut(){const pad=$("wjPadWrap"),add=$("wjAddRow");const p=WS.cutPad||{row:0};const row=document.querySelector('.wjCutRow[data-r="'+p.row+'"]');if(row)row.scrollIntoView({block:"nearest",inline:"nearest"});if(add&&pad){const ar=add.getBoundingClientRect(),pr=pad.getBoundingClientRect();if(ar.bottom>pr.top+2&&ar.top<pr.top-8){const need=ar.bottom-(pr.top-8);const top=row?row.getBoundingClientRect().top:0;if(top-need>=80)scrollBy(0,need)}}}
+function wPaintCut(){document.querySelectorAll(".wjCutCell").forEach(el=>{const r=WS.cutRows[+el.dataset.r];if(!r)return;const v=r[el.dataset.f]||"";el.innerHTML=v?esc(v):'<span class="wjPh">0</span>';el.classList.toggle("on",+(WS.cutPad||{}).row===+el.dataset.r&&(WS.cutPad||{}).field===el.dataset.f)});const box=$("wjCutSum");if(box)box.innerHTML=wCutSumHTML();wScrollCut()}
+function wUsedHead(all,desc){const n=`<span class="wjNum">${esc(all)}</span>`,m=`<b>${esc(desc||"—")}</b>`;const raw=t("wjUsedHead")||(t("wjYouUsed")+" %n "+t("wjOf")+" %m");const parts=String(raw).split("%n");const pre=parts[0]||"",rest=parts.slice(1).join("%n");const midpost=rest.split("%m");return `${esc(pre)}${n}${esc(midpost[0]||" ")}${m}${esc(midpost.slice(1).join("%m"))}`}
+function wCutFormula(rows,per){const parts=(rows||[]).filter(r=>(wNum(r.qty)||0)>0&&(wNum(r.len)||0)>0).map(r=>wFmt(wNum(r.qty))+" \u00d7 "+wFmt(wNum(r.len))+((r.unit||"m")==="mm"?" mm":" m"));const f=parts.length?parts.join(" + ")+" = ":"";return `<span class="wjNum wjFx" dir="ltr">${esc(f+per)}</span> ${esc(t("wjPerItem")||t("wjPerUnit"))}`}
+function wCutSumHTML(){const desc=WS.cutDesc||"";const plan=cutPlan(WS.cutRows,WS.cutUnits||($("wjCutUnits")&&$("wjCutUnits").value),wStockLenMm(desc));const per=wMtxt(plan.perM),all=wMtxt(plan.totalM),bars=plan.bars+" \u00d7 "+wMtxt(plan.stockLenMm/1000);return `<p class="wjBig">${wUsedHead(all,desc)}</p>
+  <p class="wjPer">${wCutFormula(WS.cutRows,per)}</p>
+  <p>${esc(t("wjLengths"))}<br><span class="wjNum">${esc(bars)}</span></p>`}
+function wCutForm(u){
+  const j=wJob(WS.jobId);if(!j){WS.screen="list";return wListHTML(u)}
+  const items=wStockItems().filter(r=>{let hasL=false;wMoves(r.desc).forEach(k=>{if(wClass(k.unit)==="len"||+k.len)hasL=true});return hasL});
+  const allItems=items.length?items:wStockItems();
+  if(!WS.cutRows||!WS.cutRows.length)WS.cutRows=[{qty:"",len:"",unit:"m"}];
+  if(!WS.cutPad)WS.cutPad={row:0,field:"qty"};
+  const picks=allItems.length?`<div id="wjPicks">${allItems.map(r=>`<button type="button" class="sec wjCutPick${foldName(r.desc)===foldName(WS.cutDesc)?" on":""}" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}">${esc(r.desc)}</button>`).join("")}</div>`:`<p class="hint">${esc(t("wjNoneM"))}</p>`;
+  const rowHTML=(r,i)=>{const on=f=>WS.cutPad.row===i&&WS.cutPad.field===f?" on":"";return `<div class="wjCutRow" data-r="${i}">
+    <div><label>${esc(t("wjQty"))}</label><button type="button" class="wjCutCell${on("qty")}" data-r="${i}" data-f="qty">${r.qty?esc(r.qty):`<span class="wjPh">0</span>`}</button></div>
+    <div><label>${esc(t("wjLen"))}</label><button type="button" class="wjCutCell${on("len")}" data-r="${i}" data-f="len">${r.len?esc(r.len):`<span class="wjPh">0</span>`}</button></div>
+    <div class="wjCutUnits"><button type="button" class="sec${(r.unit||"m")==="mm"?" on":""}" data-run="${i}" data-u="mm">${esc(t("wjMm"))}</button><button type="button" class="sec${(r.unit||"m")==="m"?" on":""}" data-run="${i}" data-u="m">${esc(t("wjM"))}</button><button type="button" class="sec wjDelRow" data-delr="${i}">${esc(t("wjDelRow"))}</button></div></div>`};
+  const keys=["1","2","3","4","5","6","7","8","9","bk","0","dot"];
+  const lab={bk:"←",dot:(lang==="fr"||lang==="af"?",":"."),0:"0"};
+  const pad=keys.map(k=>`<button type="button" class="sec" data-pad="${k}">${lab[k]||k}</button>`).join("")+`<button type="button" class="wjPadOk" id="wjPadOk" data-pad="ok">${esc(t("wjPadOk"))}</button>`;
+  return `<div class="box" id="wjCut"><h2>${esc(t("wjCut"))}</h2><p class="hint">${esc(t("wjCutH"))}</p>
+  <p class="hint">${esc(t("wjCutMat"))}</p>${picks}
+  <label for="wjCutItem">${esc(t("wjMade"))}</label><input id="wjCutItem" data-draft="wjCutItem" type="text" autocomplete="off" spellcheck="true" placeholder="${esc(t("wjMadeH"))}" value="${esc(WS.cutItem||j.item||"")}">
+  <label for="wjCutUnits">${esc(t("wjUnits"))}</label><input id="wjCutUnits" data-draft="wjCutUnits" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="${esc(WS.cutUnits||"1")}">
+  <h3>${esc(t("wjCut"))}</h3>
+  <div id="wjCutRows">${WS.cutRows.map(rowHTML).join("")}</div>
+  <button type="button" class="sec" id="wjAddRow">${esc(t("wjAddRow"))}</button>
+  <div id="wjCutSum">${wCutSumHTML()}</div>
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p>
+  <button type="button" id="wjSaveCut">${esc(t("wjSaveCut"))}</button>
+  <div class="wjPadSpace"></div></div>
+  <div id="wjPadWrap"><div id="wjPad">${pad}</div></div>`}
+function wAssetsHTML(u){
+  const rows=all("fa").slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
+  const line=f=>{const job=f.jobId?((wJob(f.jobId)||{}).name||f.jobName||""):t("wjNoJob");const size=f.size?` · <bdi class="wjIso">${esc(f.size)}</bdi>`:"";const wait=`<span class="st">${esc(t("wjWaitAssets"))}</span>`;const before=f.builtBefore?`<span class="st before">${esc(t("wjBuiltBefore"))}</span>`:"";return `<div class="urow wjFaRow" data-fa="${esc(f.id)}"><span class="n">${esc(f.name||"—")}</span><span class="hint"><span class="wjNum">${esc(wFmt(f.qty||1))}</span>${size} · ${esc(t("wjFaJob"))}: ${esc(job)} · ${esc(wWhen(f.at))}</span>${(f.materials||[]).length?`<span class="wjMats">${esc(t("wjIuMatsL"))}: ${f.materials.map(m=>`<span class="wjNum">${esc(m.type)} ${esc(wFmt(m.qty)+" "+(m.unit==="mm"?"mm":m.unit==="pcs"?t("wjPcsU"):"m"))}</span>`).join(" · ")}${f.tookStock?` · ${esc(t("wjIuTook"))}`:""}</span>`:""}${f.builtBefore&&!f.jobId?"":`<span class="wjWho">👤 ${esc(t("wjPerson"))}: <b>${esc(f.suggestedPerson||t("wjNoPerson"))}</b></span>`}${wait}${before}${u.admin&&f.jobId?`<button type="button" class="sm sec wjEditFa" data-fa="${esc(f.id)}">${esc(t("wjEditFa"))}</button>`:""}</div>`};
+  return `<div class="box" id="wjAssetsBox"><h2>${esc(t("wjAssets"))}</h2><p class="hint">${esc(t("wjAssetsH"))}</p>
+  ${u.admin?`<button type="button" id="wjAddBefore">${esc(t("wjAddBefore"))}</button>`:""}
+  <div id="wjFaList">${rows.length?rows.map(line).join(""):`<p class="hint">${esc(t("wjNoneFa"))}</p>`}</div></div>`}
+function wBeforeHTML(u){
+  if(!u||!u.admin){WS.screen="assets";return wAssetsHTML(u)}
+  return `<div class="box" id="wjBeforeBox"><h2>${esc(t("wjAddBefore"))}</h2><p class="hint">${esc(t("wjAddBeforeH"))}</p>
+  <label for="wjFaName">${esc(t("wjMade"))}</label><input id="wjFaName" data-draft="wjFaName" type="text" autocomplete="off" spellcheck="true" autocapitalize="sentences" placeholder="${esc(t("wjMadeH"))}">
+  <label for="wjFaQty">${esc(t("wjUnits"))}</label><input id="wjFaQty" data-draft="wjFaQty" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="1" value="1">
+  <label for="wjFaSize">${esc(t("wjSize"))}</label><input id="wjFaSize" dir="auto" data-draft="wjFaSize" type="text" autocomplete="off" spellcheck="true" placeholder="${esc(t("wjSizeH"))}">
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p>
+  <button type="button" id="wjSaveFa">${esc(t("wjSaveBefore"))}</button></div>`}
+function wStockLenHTML(u){
+  if(!u||!u.admin){WS.screen="stock";return wStockHTML(u)}
+  const desc=WS.setDesc||"",mm=wStockLenMm(desc),m=mm/1000;
+  return `<div class="box" id="wjStockLenBox"><h2>${esc(t("wjStockLenT"))}</h2><p class="hint">${esc(t("wjStockLenH"))}</p>
+  <p><b>${esc(desc||"—")}</b></p>
+  <label for="wjBarLen">${esc(t("wjStockLenT"))} (m)</label><input id="wjBarLen" data-draft="wjBarLen" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="${esc(wFmt(m))}">
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p>
+  <button type="button" id="wjSaveLen">${esc(t("wjSaveLen"))}</button></div>`}
+function wSaveCut(u){
+  const j=wJob(WS.jobId);if(!j){wErr(t("wjNeed"));return}
+  const desc=(WS.cutDesc||"").trim();if(!desc){wErr(t("wjNeedMat"));return}
+  const item=(($("wjCutItem")||{}).value||WS.cutItem||"").trim();
+  const unitsRaw=(($("wjCutUnits")||{}).value||WS.cutUnits||"1");
+  const units=wNum(unitsRaw);if(!(units>0)||Math.round(units)!==units){wErr(t("wjNeedQtyLen"));return}
+  WS.cutItem=item;WS.cutUnits=String(Math.round(units));
+  const rows=(WS.cutRows||[]).map(r=>({qty:r.qty,len:r.len,unit:r.unit||"m"})).filter(r=>(wNum(r.qty)||0)>0||(wNum(r.len)||0)>0);
+  if(!rows.length){wErr(t("wjNeedCut"));return}
+  for(const r of rows){if(!(Math.round(wNum(r.qty)||0)>0)||!(wNum(r.len)>0)){wErr(t("wjNeedQtyLen"));return}if(Number.isNaN(wNum(r.qty))||Number.isNaN(wNum(r.len))){wErr(t("wjBadNum"));return}}
+  const plan=cutPlan(rows,units,wStockLenMm(desc));
+  const mat=wItemMat(desc)||"steel";
+  const bal=wOn(mat,desc);
+  if(plan.totalM-bal.len>1e-9){wErr(t("wjShort"));return}
+  const id="c"+Date.now(),at=new Date().toISOString(),stored=rows.map(r=>({qty:Math.round(wNum(r.qty)),lenMm:wRowMm({qty:1,len:r.len,unit:r.unit}),unit:r.unit||"m",len:wNum(r.len)}));
+  const data={id:id,jobId:WS.jobId,desc:desc,mat:mat,rows:stored,perMm:plan.perMm,units:plan.units,totalMm:plan.totalMm,stockLenMm:plan.stockLenMm,bars:plan.bars,item:item||j.item||j.name,size:(($("wjCutSize")||{}).value||WS.cutSize||j.size||"").trim(),by:u.name,at:at};
+  if(put("c",id,data)===false)return;
+  const kid="kout"+id,lenM=plan.totalMm/1000;
+  if(put("k",kid,{id:kid,ref:"",dir:"out",mat:mat,desc:desc,qty:0,len:lenM,unit:"m",qThou:0,lThou:plan.totalMm,at:at,by:u.name,jobId:WS.jobId,cutId:id,sourceApp:"cut"})===false)return;
+  WS.cutRows=[];draftClear("wjCutItem");draftClear("wjCutUnits");afterSave(true);
+}
+function wDelCut(id){if(!canFix()){alert(t("fixOnly"));return}const rec=all("c").find(c=>c.id===id);if(!rec)return;if($("wjDelCutAsk"))$("wjDelCutAsk").remove();const m=document.createElement("div");m.className="modal navAsk";m.id="wjDelCutAsk";m.innerHTML=`<div class="card"><h2>${esc(t("wjDelCutQ"))}</h2><p class="wjStay">${esc(t("wjStayUsed"))}</p><button type="button" class="red" id="wjDelCutYes">${esc(t("navYes"))}</button><button type="button" class="sec" id="wjDelCutNo">${esc(t("navNo"))}</button></div>`;document.body.appendChild(m);$("wjDelCutNo").onclick=()=>m.remove();$("wjDelCutYes").onclick=()=>{m.remove();if(remove("c",id)===false)return;render()}}
+/* v5: a finished Build job (v4 or v5 record, read unchanged) becomes one Send-to-Assets item.
+   "Shaun Bed" -> person "Shaun", item "Bed"; "Johan Side Table" -> "Johan" + "Side Table". Admin can edit both. */
+const W_ITEMS=["side table","bedside table","coffee table","dining table","bunk bed","single bed","double bed","bed","table","chair","bench","stool","desk","shelf","shelves","cupboard","cabinet","wardrobe","locker","rack","stand","trolley","frame","gate","door","window","ladder","box","crate"];
+function wSplitJob(j){const name=String((j&&j.name)||"").replace(/\s+/g," ").trim();const own=String((j&&j.item)||"").trim();const low=name.toLowerCase();
+  const cut=it=>{const l=it.toLowerCase();return low===l?"":(low.endsWith(" "+l)?name.slice(0,name.length-it.length).trim():null)};
+  if(own){const p=cut(own);return {person:p==null?"":p,item:own}}
+  for(const it of W_ITEMS){const p=cut(it);if(p!=null)return {person:p,item:name.slice(name.length-it.length)}}
+  const w=name.split(" ");if(w.length>1)return {person:w.slice(0,-1).join(" "),item:w[w.length-1]};return {person:"",item:name}}
+function wFaOf(j){return j&&j.id?wFa(j.id)[0]:undefined}
+/* v5 (Johan 14 Nov 02:29): existing job already built and in use. Admin opens the job, adds materials + size, then Send to Assets.
+   Built before: by default NO stock is taken. "Take off stock" (default OFF) takes the metres off like a cut list. Job record is never changed. */
+function wIuMat(type){const it=wStockItems().find(r=>foldName(r.desc)===foldName(type));if(it)return it.mat;return /rope|corde|tou\b|حبل/i.test(type)?"rope":"steel"}
+function wOpenInUse(){const j=wJob(WS.jobId)||{};const sp=wSplitJob(j);const pre=wMats(j.id).slice().reverse().map(m=>{const L=+m.len||0,u=String(m.unit||"m").toLowerCase();if(L>0)return {type:m.desc||"",amt:wFmt(u==="cm"?L/100:L),unit:u==="mm"?"mm":"m",pre:m.id};return {type:m.desc||"",amt:wFmt(+m.qty||0),unit:"pcs",pre:m.id}}).filter(r=>r.type&&r.amt);
+  WS.iu={item:sp.item,person:sp.person,qty:j.units>0?String(j.units):"1",size:j.size||"",take:false,rows:pre.length?pre:[{type:"",amt:"",unit:"m"}]};WS.iuPad=0;WS.iuPadOn=false;wGo("inuse")}
+function wIuKeep(){const o=WS.iu;if(!o)return;const g=id=>$(id)?$(id).value:null;["item","person","qty","size"].forEach(k=>{const v=g("wjIu_"+k);if(v!=null)o[k]=v});document.querySelectorAll(".wjIuType").forEach(el=>{const r=o.rows[+el.dataset.r];if(r)r.type=el.value})}
+function wIuPadKey(k){const o=WS.iu;if(!o)return;const r=o.rows[WS.iuPad||0];if(!r)return;let v=String(r.amt||"");if(k==="ok"){if((WS.iuPad||0)<o.rows.length-1)WS.iuPad++;else wIuPadShow(false);wIuPaint();return}if(k==="bk")v=v.slice(0,-1);else if(k==="dot"){if(!v)v="0";if(v.indexOf(".")<0&&v.indexOf(",")<0)v+=(lang==="fr"||lang==="af"?",":".")}else if(/^\d$/.test(k))v+=k;r.amt=v;wIuPaint()}
+function wIuPaint(){document.querySelectorAll(".wjIuCell").forEach(el=>{const r=(WS.iu||{rows:[]}).rows[+el.dataset.r];if(!r)return;el.innerHTML=r.amt?esc(r.amt):'<span class="wjPh">0</span>';el.classList.toggle("on",+el.dataset.r===(WS.iuPad||0))})}
+function wInUseHTML(u){
+  const j=wJob(WS.jobId);if(!u||!u.admin||!j||j.type!=="build"||!WS.iu){WS.screen=j?"job":"list";return j?wJobHTML(u):wListHTML(u)}
+  const o=WS.iu;if(!o.rows.length)o.rows=[{type:"",amt:"",unit:"m"}];const items=wStockItems();
+  const row=(r,i)=>`<div class="wjCutRow wjIuRow" data-r="${i}"><div style="grid-column:1/-1">${r.pre?`<p class="wjIuPre">${esc(t("wjIuPre"))}</p>`:`<label>${esc(t("wjIuType"))}</label>`}<input class="wjIuType" data-r="${i}" type="text" list="wjIuList" autocomplete="off" spellcheck="true" placeholder="${esc(t("wjIuTypeH"))}" value="${esc(r.type)}"></div>
+    <div><label>${esc(t("wjIuAmt"))}</label><button type="button" class="wjCutCell wjIuCell${(WS.iuPad||0)===i?" on":""}" data-r="${i}">${r.amt?esc(r.amt):'<span class="wjPh">0</span>'}</button></div>
+    <div class="wjCutUnits" style="grid-column:auto;grid-template-columns:${r.unit==="pcs"?"1fr auto":"1fr 1fr auto"}">${r.unit==="pcs"?`<button type="button" class="sec on" disabled>${esc(t("wjPcsU"))}</button>`:`<button type="button" class="sec${r.unit==="mm"?" on":""}" data-iuu="${i}" data-u="mm">${esc(t("wjMm"))}</button><button type="button" class="sec${r.unit!=="mm"?" on":""}" data-iuu="${i}" data-u="m">${esc(t("wjM"))}</button>`}<button type="button" class="sec wjDelRow" data-iudel="${i}">${esc(t("wjDelRow"))}</button></div></div>`;
+  const keys=["1","2","3","4","5","6","7","8","9","bk","0","dot"],lab={bk:"←",dot:(lang==="fr"||lang==="af"?",":".")};
+  const pad=keys.map(k=>`<button type="button" class="sec" data-iupad="${k}">${lab[k]||k}</button>`).join("")+`<button type="button" class="wjPadOk" data-iupad="ok">${esc(t("wjPadOk"))}</button>`;
+  return `<div class="box${WS.iuPadOn?"":" padOff"}" id="wjInUseBox"><h2>${esc(t("wjInUse"))}</h2><p><b>${esc(j.name)}</b></p><p class="hint">${esc(t("wjInUseH"))}</p>
+  <label for="wjIu_item">${esc(t("wjRdItem"))}</label><input id="wjIu_item" type="text" autocomplete="off" spellcheck="true" value="${esc(o.item)}">
+  <label for="wjIu_person">${esc(t("wjPerson"))}</label><input id="wjIu_person" type="text" autocomplete="off" spellcheck="true" autocapitalize="words" placeholder="${esc(t("wjPersonH"))}" value="${esc(o.person)}">
+  <label for="wjIu_qty">${esc(t("wjUnits"))}</label><input id="wjIu_qty" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="${esc(o.qty)}">
+  <label for="wjIu_size">${esc(t("wjSize"))}</label><input id="wjIu_size" dir="auto" type="text" autocomplete="off" spellcheck="true" placeholder="${esc(t("wjSizeEx"))}" value="${esc(o.size)}">
+  <h3>${esc(t("wjIuMats"))}</h3><datalist id="wjIuList">${items.map(r=>`<option value="${esc(r.desc)}"></option>`).join("")}</datalist>
+  ${items.length?`<div id="wjIuPicks">${items.map(r=>`<button type="button" class="sec wjCutPick wjIuPick" data-desc="${esc(r.desc)}">${esc(r.desc)}</button>`).join("")}</div>`:""}
+  <div id="wjIuRows">${o.rows.map(row).join("")}</div>
+  <button type="button" class="sec" id="wjIuAdd">${esc(t("wjIuAdd"))}</button>
+  <button type="button" class="wjTake${o.take?" on":""}" id="wjIuTake" role="switch" aria-checked="${o.take?"true":"false"}"><span class="wjTgl"></span><span>${esc(t("wjTake"))}</span></button>
+  <p class="hint wjTakeTxt">${esc(o.take?t("wjTakeOn"):t("wjTakeOff"))}</p>
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p>
+  <button type="button" id="wjSendIu">${esc(t("wjAssets"))}</button>
+  <div class="wjPadSpace"></div></div>
+  <div id="wjPadWrap" class="${WS.iuPadOn?"":"off"}"><div id="wjPad">${pad}</div></div>`}
+function wIuPadShow(on){WS.iuPadOn=!!on;const w=$("wjPadWrap"),b=$("wjInUseBox");if(w)w.classList.toggle("off",!on);if(b)b.classList.toggle("padOff",!on)}
+function wSendInUse(u){
+  if(!(u&&u.admin)){wErr(t("noAccess"));return}wIuKeep();const o=WS.iu,j=wJob(WS.jobId);if(!o||!j||j.type!=="build")return;
+  if(wFaOf(j)){WS.screen="job";render();return}
+  const name=String(o.item||"").trim();if(!name){wErr(t("wjNeedBefore"));return}
+  const qty=wNum(o.qty);if(!(qty>0)||Number.isNaN(qty)){wErr(t("wjNeedBeforeQty"));return}
+  const rows=o.rows.filter(r=>String(r.type||"").trim()||String(r.amt||"").trim());
+  for(const r of rows){const a=wNum(r.amt);if(!String(r.type||"").trim()||!(a>0)||Number.isNaN(a)){wErr(t("wjNeedIu"));return}}
+  const mats=rows.map(r=>{const type=String(r.type).trim(),it=wStockItems().find(x=>foldName(x.desc)===foldName(type));const un=r.unit==="mm"?"mm":r.unit==="pcs"?"pcs":"m";return {type:it?it.desc:type,qty:wNum(r.amt),unit:un,mat:it?it.mat:wIuMat(type),mm:un==="pcs"?0:wRowMm({qty:1,len:r.amt,unit:un}),pre:r.pre||""}});
+  /* Rows pre-filled from the job's own v4 Add steel / Add rope records were already taken off stock when they were added: never deduct them again. */
+  const take=mats.filter(m=>!m.pre&&m.mm>0);
+  if(o.take){const need={};for(const m of take){const it=wStockItems().find(x=>foldName(x.desc)===foldName(m.type));if(!it){wErr(t("wjNotStock").replace("%n",m.type));return}const k=foldName(it.desc);need[k]=(need[k]||0)+m.mm;if(need[k]/1000-wOn(it.mat,it.desc).len>1e-9){wErr(t("wjShort"));return}}}
+  const id="fa-"+j.id,at=new Date().toISOString();
+  const materials=mats.map(m=>Object.assign({type:m.type,qty:m.qty,unit:m.unit,mat:m.mat},m.pre?{jobRecord:m.pre}:{}));
+  if(o.take){let n=0;for(const m of take){const kid="kout"+id+"-"+(n++);if(put("k",kid,{id:kid,ref:"",dir:"out",mat:m.mat,desc:m.type,qty:0,len:m.mm/1000,unit:"m",qThou:0,lThou:m.mm,at:at,by:u.name,jobId:j.id,faId:id,sourceApp:"inuse"})===false)return}}
+  if(put("fa",id,{id:id,jobId:j.id,name:name,qty:qty,size:String(o.size||"").trim(),jobName:j.name,suggestedPerson:String(o.person||"").replace(/\s+/g," ").trim(),materials:materials,tookStock:o.take&&take.length?1:0,at:at,by:u.name,status:"waiting",builtBefore:1,inUse:1,camp:"10 Alfa",sourceApp:"tmcworkshop"})===false)return;
+  WS.iu=null;afterSave(true);
+}
+function wReadyHTML(u){
+  if(!u||!u.admin){WS.screen=WS.faFrom==="assets"?"assets":"job";return WS.screen==="assets"?wAssetsHTML(u):wListHTML(u)}
+  const f=WS.faEdit?all("fa").find(x=>x.id===WS.faEdit):null;const j=f?(f.jobId?wJob(f.jobId):null):wJob(WS.jobId);
+  if(!f&&(!j||j.type!=="build")){WS.screen="list";return wListHTML(u)}
+  const sp=j?wSplitJob(j):{person:"",item:""};const it=f?f.name:sp.item,pe=f?(f.suggestedPerson||""):sp.person,q=f?f.qty:(j.units>0?j.units:1);
+  return `<div class="box" id="wjReadyBox"><h2>${esc(t("wjMarkReady"))}</h2><p class="hint">${esc(t("wjReadyH"))}</p>
+  ${j?`<p><b>${esc(t("wjFaJob"))}:</b> ${esc(j.name)}</p>`:""}
+  <label for="wjRdName">${esc(t("wjRdItem"))}</label><input id="wjRdName" type="text" autocomplete="off" spellcheck="true" autocapitalize="sentences" value="${esc(it)}">
+  <label for="wjRdQty">${esc(t("wjUnits"))}</label><input id="wjRdQty" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="${esc(wFmt(q||1))}">
+  <label for="wjRdPerson">${esc(t("wjPerson"))}</label><input id="wjRdPerson" type="text" autocomplete="off" spellcheck="true" autocapitalize="words" placeholder="${esc(t("wjPersonH"))}" value="${esc(pe)}">
+  <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p>
+  <button type="button" id="wjSaveReady">${esc(t("wjSaveReady"))}</button></div>`}
+function wMarkReady(u){
+  if(!(u&&u.admin)){wErr(t("noAccess"));return}
+  const old=WS.faEdit?all("fa").find(x=>x.id===WS.faEdit):null;const j=old?(old.jobId?wJob(old.jobId):null):wJob(WS.jobId);
+  if(!old&&(!j||j.type!=="build"))return;
+  if(!old&&wFaOf(j)){WS.faEdit=wFaOf(j).id;render();return}
+  const name=(($("wjRdName")||{}).value||"").trim();if(!name){wErr(t("wjNeedBefore"));return}
+  const qty=wNum(($("wjRdQty")||{}).value);if(!(qty>0)||Number.isNaN(qty)){wErr(qty==null||!(qty>0)?t("wjNeedBeforeQty"):t("wjBadNum"));return}
+  const person=(($("wjRdPerson")||{}).value||"").replace(/\s+/g," ").trim();
+  if(old){if(put("fa",old.id,Object.assign({},old,{name:name,qty:qty,suggestedPerson:person}))===false)return;WS.faEdit=null;afterSave(true);return}
+  const id="fa-"+j.id,at=new Date().toISOString();
+  if(put("fa",id,{id:id,jobId:j.id,name:name,qty:qty,size:j.size||"",jobName:j.name,suggestedPerson:person,at:at,by:u.name,status:"waiting",builtBefore:0,camp:"10 Alfa",sourceApp:"tmcworkshop"})===false)return;
+  afterSave(true);
+}
+function wSaveBefore(u){
+  if(!(u&&u.admin)){wErr(t("noAccess"));return}
+  const name=(($("wjFaName")||{}).value||"").trim();if(!name){wErr(t("wjNeedBefore"));return}
+  const qty=wNum(($("wjFaQty")||{}).value);if(!(qty>0)||Number.isNaN(qty)){wErr(qty==null||!(qty>0)?t("wjNeedBeforeQty"):t("wjBadNum"));return}
+  const size=(($("wjFaSize")||{}).value||"").trim();
+  const id="fa-b"+Date.now(),at=new Date().toISOString();
+  if(put("fa",id,{id:id,jobId:"",name:name,qty:qty,size:size,jobName:"",at:at,by:u.name,status:"waiting",builtBefore:1,camp:"10 Alfa",sourceApp:"tmcworkshop"})===false)return;
+  draftClear("wjFaName");draftClear("wjFaQty");draftClear("wjFaSize");afterSave(true);
+}
+function wSaveLen(u){
+  if(!(u&&u.admin)){wErr(t("noAccess"));return}
+  const desc=(WS.setDesc||"").trim();if(!desc){wErr(t("wjNeedItem"));return}
+  const m=wNum(($("wjBarLen")||{}).value);if(!(m>0)||Number.isNaN(m)){wErr(t("wjNeedStockLen"));return}
+  const mm=Math.round(m*1000),id=wStockLenId(desc),cur=all("sl").find(x=>foldName(x.desc)===foldName(desc));
+  const rec={id:cur?cur.id:id,desc:desc,stockLenMm:mm,at:new Date().toISOString(),by:u.name};
+  if(cur&&!canFix()){alert(t("fixOnly"));return}
+  if(put("sl",rec.id,rec)===false)return;
+  draftClear("wjBarLen");afterSave(true);
+}
+
 function workHTML(u){
   if(!canKind("j","view"))return `<div class="box"><p>${esc(t("noAccess"))}</p></div>`;
   if(WS.screen==="jobform")return wJobForm(u);
@@ -660,21 +889,31 @@ function workHTML(u){
   if(WS.screen==="stock")return wStockHTML(u);
   if(WS.screen==="addstock")return wAddStockHTML(u);
   if(WS.screen==="setstock")return wSetStockHTML(u);
+  if(WS.screen==="cut")return wCutForm(u);
+  if(WS.screen==="assets")return wAssetsHTML(u);
+  if(WS.screen==="before")return wBeforeHTML(u);
+  if(WS.screen==="ready")return wReadyHTML(u);
+  if(WS.screen==="inuse")return wInUseHTML(u);
+  if(WS.screen==="stocklen")return wStockLenHTML(u);
   return wListHTML(u);
 }
 function wListHTML(u){
   const jobs=all("j").filter(j=>WS.flt==="all"||j.type===WS.flt).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   const flt=(k,lab)=>`<button type="button" class="sec${WS.flt===k?" on":""}" id="wjFlt${k}" data-flt="${k}">${esc(lab)}</button>`;
-  const row=j=>{const ms=wMats(j.id),done=wPhotos(j.id).length;return `<button type="button" class="uli wjOpen" data-job="${esc(j.id)}"><span class="ui">${j.type==="repair"?"🛠️":"🏗️"}</span><span class="ut"><span class="n">${esc(j.name)}</span><small>${esc(j.type==="repair"?t("wjRepair"):t("wjBuild"))}${wEx(j)?" · "+esc(t("wjEx")):""} · ${esc(done?t("wjDone"):t("wjOpenJob"))} · ${esc(wWhen(j.at))}</small><small>${esc(t("wjSteelTot"))}: ${esc(wLine(ms.filter(m=>m.mat==="steel")))} · ${esc(t("wjRopeTot"))}: ${esc(wLine(ms.filter(m=>m.mat==="rope")))}</small></span><span class="ch">›</span></button>`};
+  const row=j=>{const ms=wMats(j.id),done=wPhotos(j.id).length;return `<button type="button" class="uli wjOpen" data-job="${esc(j.id)}"><span class="ui">${j.type==="repair"?"🛠️":"🏗️"}</span><span class="ut"><span class="n">${esc(j.name)}</span><small>${esc(j.type==="repair"?t("wjRepair"):t("wjBuild"))}${wEx(j)?" · "+esc(t("wjEx")):""} · ${esc(done?t("wjDone"):t("wjOpenJob"))}${j.type==="build"&&wFaOf(j)?(wFaOf(j).builtBefore?" · "+esc(t("wjBuiltBefore")):"")+" · "+esc(t("wjWaitAssets")):""} · ${esc(wWhen(j.at))}</small><small>${esc(t("wjSteelTot"))}: ${esc(wLine(ms.filter(m=>m.mat==="steel")))} · ${esc(t("wjRopeTot"))}: ${esc(wLine(ms.filter(m=>m.mat==="rope")))}</small></span><span class="ch">›</span></button>`};
   return `<div class="box" id="wjList"><h2>🔧 ${esc(t("wjTitle"))}</h2><p class="hint">${esc(t("wjSample"))}</p>
   <div class="rpBar" id="wjFlt">${flt("all",t("wjAll"))}${flt("build",t("wjBuild"))}${flt("repair",t("wjRepair"))}</div>
   <button type="button" id="wjStock">${esc(t("wjStock"))}</button>
+  <button type="button" id="wjAssets">${esc(t("wjAssets"))}</button>
   ${canKind("j","add")?`<button type="button" id="wjNew">${esc(t("wjNew"))}</button>`:""}
   ${jobs.length?jobs.map(row).join(""):`<p class="hint" id="wjEmpty">${esc(WS.flt==="all"?t("wjNone"):t("wjNoneF"))}</p>`}</div>`;
 }
 function wJobForm(u){
   return `<div class="box" id="wjForm"><h2>${esc(t("wjNew"))}</h2>
   <label for="wjName">${esc(t("wjName"))}</label><input id="wjName" data-draft="wjName" type="text" autocomplete="off" spellcheck="true" autocapitalize="words" placeholder="${esc(t("wjNameH"))}">
+  <label for="wjMade">${esc(t("wjMade"))}</label><input id="wjMade" data-draft="wjMade" type="text" autocomplete="off" spellcheck="true" autocapitalize="sentences" placeholder="${esc(t("wjMadeH"))}">
+  <label for="wjUnits">${esc(t("wjUnits"))}</label><input id="wjUnits" data-draft="wjUnits" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="1">
+  <label for="wjSize">${esc(t("wjSize"))}</label><input id="wjSize" dir="auto" data-draft="wjSize" type="text" autocomplete="off" spellcheck="true" placeholder="${esc(t("wjSizeH"))}">
   <p class="hint">${esc(t("wjType"))}</p><div class="rpBar"><button type="button" class="sec${WS.type==="build"?" on":""}" id="wjTyB">${esc(t("wjBuild"))}</button><button type="button" class="sec${WS.type==="repair"?" on":""}" id="wjTyR">${esc(t("wjRepair"))}</button></div>
   <p class="err" id="wjErr"${WS.err?' style="display:block"':""}>${esc(WS.err||"")}</p><p class="hint" id="drNote" style="display:none">${esc(t("draft"))}</p>
   <button type="button" id="wjSave">${esc(t("wjSave"))}</button></div>`;
@@ -683,11 +922,14 @@ function wJobHTML(u){
   const j=wJob(WS.jobId);if(!j){WS.screen="list";WS.jobId=null;return wListHTML(u)}
   const ms=wMats(j.id),ph=wPhotos(j.id)[0],st=ms.filter(m=>m.mat==="steel"),rp=ms.filter(m=>m.mat==="rope"),ot=ms.filter(m=>m.mat==="other");
   const row=m=>`<div class="urow wjRow" data-mid="${esc(m.id)}"><span class="n">${esc(m.desc)}</span><span class="hint">${esc(wWhen(m.at))} · ${esc(m.mat==="steel"?t("wjSteelTot"):m.mat==="rope"?t("wjRopeTot"):t("wjOtherTot"))}${wEx(m)?" · "+esc(t("wjEx")):""}${m.qty?esc(" · "+wFmt(m.qty)+" "+t("wjPcsU")):""}${m.len?esc(" · "+wFmt(m.len)+" "+(m.unit||"m")):""}</span>${fixBtn("m",m.id,"desc")}${fixedNote(m)}</div>`;
-  return `<div class="box" id="wjJob"><h2>${esc(j.name)}</h2><p><b>${esc(j.type==="repair"?t("wjRepair"):t("wjBuild"))}</b>${wEx(j)?" · "+esc(t("wjEx")):""} · ${esc(ph?t("wjDone"):t("wjOpenJob"))}</p><p class="hint">${esc(t("wjWhen"))}: ${esc(wWhen(j.at))} · ${esc(j.by||"")}</p>${fixBtn("j",j.id,"name")}${fixedNote(j)}</div>
+  return `<div class="box" id="wjJob"><h2>${esc(j.name)}</h2><p><b>${esc(j.type==="repair"?t("wjRepair"):t("wjBuild"))}</b>${wEx(j)?" · "+esc(t("wjEx")):""} · ${esc(ph?t("wjDone"):t("wjOpenJob"))}${j.item?esc(" · "+j.item):""}${j.units?esc(" × "+wFmt(j.units)):""}${j.size?esc(" · "+j.size):""}</p><p class="hint">${esc(t("wjWhen"))}: ${esc(wWhen(j.at))} · ${esc(j.by||"")}</p>${fixBtn("j",j.id,"name")}${fixedNote(j)}</div>
   <div class="box" id="wjPicBox"><h3>${esc(t("wjPhoto"))}</h3>${ph?wPic(ph.ph):`<p class="hint">${esc(t("wjOpenJob"))}</p>`}${phBtn(ph&&ph.ph)}${canKind("p","add")?`<button type="button" id="wjOpenPh">${esc(t("wjPhoto"))}</button>`:""}</div>
   <div class="box" id="wjTot"><h3>${esc(t("wjTot"))}</h3><p><b>${esc(t("wjSteelTot"))}</b> ${esc(wLine(st))}</p><p><b>${esc(t("wjRopeTot"))}</b> ${esc(wLine(rp))}</p><p><b>${esc(t("wjOtherTot"))}</b> ${esc(ot.length?wLine(ot):"—")}</p></div>
   <div class="box" id="wjHist"><h3>${esc(t("wjHist"))}</h3>${ms.length?ms.map(row).join(""):`<p class="hint">${esc(t("wjNoMat"))}</p>`}
-  ${canKind("m","add")?`<button type="button" id="wjAddSteel">${esc(t("wjSteel"))}</button><button type="button" class="sec" id="wjAddRope">${esc(t("wjRope"))}</button><button type="button" class="sec" id="wjAddOther">${esc(t("wjOther"))}</button>`:""}</div>`;
+  ${canKind("c","add")||canKind("m","add")?`<button type="button" id="wjCutNew">${esc(t("wjCutNew"))}</button>`:""}
+  ${canKind("m","add")?`<button type="button" class="sec" id="wjAddSteel">${esc(t("wjSteel"))}</button><button type="button" class="sec" id="wjAddRope">${esc(t("wjRope"))}</button><button type="button" class="sec" id="wjAddOther">${esc(t("wjOther"))}</button>`:""}</div>
+  <div class="box" id="wjCutsBox"><h3>${esc(t("wjCuts"))}</h3>${wCuts(j.id).length?wCuts(j.id).map(c=>{const plan=cutPlan((c.rows||[]).map(r=>({qty:r.qty,len:r.lenMm,unit:"mm"})),c.units,c.stockLenMm||wStockLenMm(c.desc));const lines=(c.rows||[]).map(r=>wFmt(r.qty)+" × "+wFmt(r.unit==="mm"?r.lenMm:(r.len!=null?r.len:r.lenMm/1000))+" "+(r.unit||"m")).join(" · ");return `<div class="urow wjCutSaved" data-cid="${esc(c.id)}"><span class="n">${esc(c.desc)}</span><span class="hint">${esc(lines)} · ${esc(t("wjPerUnit"))} <span class="wjNum">${esc(wMtxt(plan.perM))}</span> · ${esc(t("wjAllUnits"))} <span class="wjNum">${esc(wMtxt(plan.totalM))}</span> · ${esc(t("wjLengths"))} <span class="wjNum">${esc(plan.bars+" × "+wMtxt(plan.stockLenMm/1000))}</span> · ${esc(wWhen(c.at))}</span>${canFix()?`<button type="button" class="sm red wjDelCut" data-cid="${esc(c.id)}">${esc(t("wjDelCut"))}</button>`:""}</div>`}).join(""):`<p class="hint">${esc(t("wjNoCut"))}</p>`}</div>
+  ${u.admin&&j.type==="build"?`<div class="box" id="wjReadyJob">${wFaOf(j)?`<p class="hint">${esc(t("wjMarked"))}${wFaOf(j).suggestedPerson?` · 👤 ${esc(wFaOf(j).suggestedPerson)}`:""}</p><button type="button" class="sec wjEditFa" data-fa="${esc(wFaOf(j).id)}">${esc(t("wjEditFa"))}</button>`:`${wCuts(j.id).length?`<button type="button" id="wjMarkReady">${esc(t("wjMarkReady"))}</button>`:""}<button type="button" class="${wCuts(j.id).length?"sec":""}" id="wjInUse">${esc(t("wjInUse"))}</button>`}</div>`:""}`;
 }
 function wPic(ph){const st="max-height:96px;width:100%;object-fit:contain;background:#f8fafc";const src=WS.thumbs[ph];if(src)return `<img id="wjPic" class="phPrev" alt="" style="${st}" src="${esc(src)}">`;return `<img id="wjPic" class="phPrev" alt="" data-phid="${esc(ph)}" style="display:none;${st}">`}
 function wHand(mat){const seen={},rows=[];all("k").forEach(k=>{if((mat&&k.mat!==mat)||(k.dir==="in"&&!wApplied(k.ref)))return;const key=foldName(k.desc);if(!k.desc||seen[key])return;seen[key]=1;const b=wOn(mat||k.mat||"other",k.desc);rows.push(`<p><b>${esc(k.desc)}</b> ${esc(wBalTxt(mat||k.mat||"other",k.desc,b))}</p>`)});return rows.join("")||`<p class="hint">0</p>`}
@@ -695,7 +937,7 @@ function wStockHTML(u){
   const hs=all("hj").slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
   const ks=all("k").filter(k=>k.dir!=="in"||wApplied(k.ref)).slice().sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
   const hold=wStockItems();
-  const row=r=>`<div class="urow wjHold" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}"><span class="n">${esc(r.desc)}</span><span class="hint">${esc(wBalTxt(r.mat,r.desc,r.bal))} · ${esc(wMatLab(r.mat))}</span>${u.admin?`<button type="button" class="sm sec wjSet" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}">${esc(t("wjSet"))}</button>`:""}</div>`;
+  const row=r=>{let hasL=false;wMoves(r.desc).forEach(k=>{if(wClass(k.unit)==="len"||+k.len)hasL=true});const bar=hasL?` · ${esc(t("wjStockLen"))} <span class="wjNum">${esc(wMtxt(wStockLenMm(r.desc)/1000))}</span>`:"";return `<div class="urow wjHold" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}"><span class="n">${esc(r.desc)}</span><span class="hint"><span class="wjNum">${esc(wBalTxt(r.mat,r.desc,r.bal))}</span> · ${esc(wMatLab(r.mat))}${bar}</span>${u.admin?`<button type="button" class="sm sec wjSet" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}">${esc(t("wjSet"))}</button>`:""}${u.admin&&hasL?`<button type="button" class="sm sec wjSetLen" data-desc="${esc(r.desc)}" data-mat="${esc(r.mat)}">${esc(t("wjSetLen"))}</button>`:""}</div>`};
   const aud=k=>{const j=k.jobId?wJob(k.jobId):null;const bits=[];if(k.qty!=null&&k.qty!==""&&wClass(k.unit)!=="len")bits.push(wFmt(k.qty)+" "+t("wjPcsU"));if(+k.len||wClass(k.unit)==="len")bits.push(wFmt(k.len||k.qty||0)+" "+(wClass(k.unit)==="len"?(k.unit||"m"):(k.unit||"m")));const lab=k.dir==="out"?t("wjOut"):k.dir==="set"?t("wjSetAud"):(k.sourceApp==="fi"||k.ref)?t("wjIn"):t("wjInAdmin");return `<div class="urow wjAud"><span class="n">${esc(lab)}</span><span class="hint">${esc(wWhen(k.at))} · ${esc(k.desc)} · ${esc(bits.join(" · "))}${k.by?" · "+esc(k.by):""}${j?" · "+esc(j.name):""}${k.note?" · "+esc(k.note):""}</span></div>`};
   return `<div class="box" id="wjStockBox"><h2>${esc(t("wjStock"))}</h2><p class="hint">${esc(t("wjStockH"))}</p>
   ${u.admin?`<button type="button" id="wjAddStock">${esc(t("wjAddSt"))}</button>`:""}
@@ -765,6 +1007,35 @@ function bindWork(u){
   on("wjAddSteel",()=>wGo("mat",{mat:"steel"}));on("wjAddRope",()=>wGo("mat",{mat:"rope"}));on("wjAddOther",()=>wGo("mat",{mat:"other"}));
   on("wjSaveM",()=>wSaveMat(u));
   on("wjStock",()=>wGo("stock"));
+  on("wjAssets",()=>wGo("assets"));
+  on("wjAddBefore",()=>wGo("before"));
+  on("wjSaveFa",()=>wSaveBefore(u));
+  on("wjCutNew",()=>wOpenCut());
+  on("wjSaveCut",()=>wSaveCut(u));
+  on("wjAddRow",()=>{WS.cutRows=(WS.cutRows||[]).concat([{qty:"",len:"",unit:"m"}]);WS.cutPad={row:WS.cutRows.length-1,field:"qty"};render()});
+  document.querySelectorAll(".wjCutPick").forEach(b=>b.onclick=()=>{WS.cutDesc=b.dataset.desc;const it=$("wjCutItem"),un=$("wjCutUnits");if(it)WS.cutItem=it.value;if(un)WS.cutUnits=un.value;render()});
+  document.querySelectorAll(".wjCutCell").forEach(b=>b.onclick=()=>{WS.cutPad={row:+b.dataset.r,field:b.dataset.f};const it=$("wjCutItem"),un=$("wjCutUnits");if(it)WS.cutItem=it.value;if(un)WS.cutUnits=un.value;wPaintCut()});
+  document.querySelectorAll("[data-run]").forEach(b=>b.onclick=()=>{const r=WS.cutRows[+b.dataset.run];if(r)r.unit=b.dataset.u;const it=$("wjCutItem"),un=$("wjCutUnits");if(it)WS.cutItem=it.value;if(un)WS.cutUnits=un.value;render()});
+  document.querySelectorAll("[data-delr]").forEach(b=>b.onclick=()=>{const i=+b.dataset.delr;if((WS.cutRows||[]).length<=1){WS.cutRows=[{qty:"",len:"",unit:"m"}];}else WS.cutRows.splice(i,1);WS.cutPad={row:Math.max(0,Math.min(i,WS.cutRows.length-1)),field:"qty"};render()});
+  document.querySelectorAll("[data-pad]").forEach(b=>b.onclick=()=>{const k=b.dataset.pad;if(k==="ok"){const p=WS.cutPad||{row:0,field:"qty"};if(p.field==="qty")WS.cutPad={row:p.row,field:"len"};else if(p.row<WS.cutRows.length-1)WS.cutPad={row:p.row+1,field:"qty"};wPaintCut();return}wPadKey(k)});
+  const cu=$("wjCutUnits"),ci=$("wjCutItem");if(cu)cu.addEventListener("input",()=>{WS.cutUnits=cu.value;wPaintCut()});if(ci)ci.addEventListener("input",()=>{WS.cutItem=ci.value;wPaintCut()});if(WS.screen==="cut")setTimeout(wScrollCut,0);
+  document.querySelectorAll(".wjDelCut").forEach(b=>b.onclick=()=>wDelCut(b.dataset.cid));
+  on("wjMarkReady",()=>wGo("ready",{faEdit:null,faFrom:"job"}));
+  on("wjSaveReady",()=>wMarkReady(u));
+  on("wjInUse",()=>wOpenInUse());
+  on("wjSendIu",()=>wSendInUse(u));
+  on("wjIuAdd",()=>{wIuKeep();WS.iu.rows.push({type:"",amt:"",unit:"m"});WS.iuPad=WS.iu.rows.length-1;render()});
+  on("wjIuTake",()=>{wIuKeep();WS.iu.take=!WS.iu.take;render()});
+  document.querySelectorAll(".wjIuCell").forEach(b=>b.onclick=()=>{WS.iuPad=+b.dataset.r;wIuPadShow(true);wIuPaint();b.scrollIntoView({block:"center"})});
+  document.querySelectorAll("[data-iupad]").forEach(b=>b.onclick=()=>wIuPadKey(b.dataset.iupad));
+  document.querySelectorAll("[data-iuu]").forEach(b=>b.onclick=()=>{wIuKeep();const r=WS.iu.rows[+b.dataset.iuu];if(r)r.unit=b.dataset.u;render()});
+  document.querySelectorAll("[data-iudel]").forEach(b=>b.onclick=()=>{wIuKeep();const i=+b.dataset.iudel;if(WS.iu.rows.length<=1)WS.iu.rows=[{type:"",amt:"",unit:"m"}];else WS.iu.rows.splice(i,1);WS.iuPad=Math.max(0,Math.min(i,WS.iu.rows.length-1));render()});
+  document.querySelectorAll(".wjIuPick").forEach(b=>b.onclick=()=>{wIuKeep();const r=WS.iu.rows[WS.iuPad||0];if(r)r.type=b.dataset.desc;render()});
+  document.querySelectorAll(".wjIuType").forEach(el=>{el.addEventListener("input",()=>{const r=WS.iu&&WS.iu.rows[+el.dataset.r];if(r)r.type=el.value});el.addEventListener("focus",()=>{WS.iuPad=+el.dataset.r;wIuPadShow(false);wIuPaint()})});
+  ["item","person","qty","size"].forEach(k=>{const el=$("wjIu_"+k);if(el){el.addEventListener("input",()=>{if(WS.iu)WS.iu[k]=el.value});el.addEventListener("focus",()=>wIuPadShow(false))}});
+  document.querySelectorAll(".wjEditFa").forEach(b=>b.onclick=()=>wGo("ready",{faEdit:b.dataset.fa,faFrom:WS.screen==="assets"?"assets":"job"}));
+  on("wjSaveLen",()=>wSaveLen(u));
+  document.querySelectorAll(".wjSetLen").forEach(b=>b.onclick=()=>wGo("stocklen",{setDesc:b.dataset.desc,setMat:b.dataset.mat||"steel"}));
   on("wjAddStock",()=>wGo("addstock",{addType:WS.addType||"steel",addUnit:WS.addUnit||"piece"}));
   document.querySelectorAll("[data-adty]").forEach(b=>b.onclick=()=>{WS.addType=b.dataset.adty;if(WS.addType==="rope")WS.addUnit="m";render()});
   document.querySelectorAll("[data-adun]").forEach(b=>b.onclick=()=>{WS.addUnit=b.dataset.adun;render()});
@@ -782,9 +1053,11 @@ function wSaveJob(u){
   const name=$("wjName").value.trim();if(!name){wErr(t("wjNeed"));return}
   if(WS.type!=="build"&&WS.type!=="repair"){wErr(t("wjType"));return}
   const id="j"+Date.now();
-  const data={id:id,name:name,type:WS.type,by:u.name,at:new Date().toISOString(),example:wEx({name:name})?1:0};
+  const item=(($("wjMade")||{}).value||"").trim(),size=(($("wjSize")||{}).value||"").trim();
+  const un=wNum(($("wjUnits")||{}).value);const units=un>0?Math.round(un):0;
+  const data={id:id,name:name,type:WS.type,item:item,units:units||undefined,size:size,by:u.name,at:new Date().toISOString(),example:wEx({name:name})?1:0};
   if(put("j",id,data)===false)return;
-  draftClear("wjName");afterSave(true);
+  draftClear("wjName");draftClear("wjMade");draftClear("wjUnits");draftClear("wjSize");afterSave(true);
 }
 function wSaveMat(u){
   const desc=$("wjDesc").value.trim();if(!desc){wErr(t("wjNeedDesc"));return}
@@ -819,6 +1092,7 @@ function wPackStock(u,dir,needPos){
 function wSaveAdd(u){
   const data=wPackStock(u,"in",true);if(!data)return;
   if(put("k",data.id,data)===false)return;
+  if(wClass(data.unit)==="len")wEnsureSl(data.desc,wStockLenMm(data.desc));
   draftClear("wjItem");draftClear("wjAddQty");draftClear("wjAddNote");afterSave(true);
 }
 function wSaveSet(u){
@@ -843,11 +1117,11 @@ function wsNav(){
   if(wsNav.done||!window.TMC.nav)return;wsNav.done=1;const N=window.TMC.nav;
   N.keys.push(o=>{if(o.t==="work"){o.sc=WS.screen;o.ji=WS.jobId||"";o.mt=WS.mat||"";o.sd=WS.setDesc||"";o.sm=WS.setMat||""}return o});
   N.sets.push(o=>{if(o.sc){WS.screen=o.sc;WS.jobId=o.ji||null;WS.mat=o.mt||null;WS.setDesc=o.sd||"";WS.setMat=o.sm||null;WS.pendingPhoto=null}});
-  N.ups.push(()=>{if(tab!=="work")return false;let to=null;if(WS.screen==="mat"||WS.screen==="photo")to="job";else if(WS.screen==="addstock"||WS.screen==="setstock")to="stock";else if(WS.screen==="job"||WS.screen==="jobform"||WS.screen==="stock")to="list";else return false;WS.screen=to;WS.mat=null;WS.pendingPhoto=null;if(to!=="setstock"){WS.setDesc="";WS.setMat=null}if(to==="list")WS.jobId=null;N.st=N.st.filter(k=>{try{const o=JSON.parse(k);return !(o.t==="work"&&o.sc&&o.sc!=="list")}catch(e){return true}});return true});
-  N.dirty.push(()=>tab==="work"&&WS.screen==="photo"&&!!WS.pendingPhoto);
-  N.clear.push(()=>{WS.pendingPhoto=null});
+  N.ups.push(()=>{if(tab!=="work")return false;let to=null;if(WS.screen==="mat"||WS.screen==="photo"||WS.screen==="cut")to="job";else if(WS.screen==="addstock"||WS.screen==="setstock"||WS.screen==="stocklen")to="stock";else if(WS.screen==="before")to="assets";else if(WS.screen==="inuse")to="job";else if(WS.screen==="ready"){to=WS.faFrom==="assets"?"assets":"job";WS.faEdit=null}else if(WS.screen==="job"||WS.screen==="jobform"||WS.screen==="stock"||WS.screen==="assets")to="list";else return false;WS.screen=to;WS.mat=null;WS.pendingPhoto=null;if(to!=="setstock"&&to!=="stocklen"){WS.setDesc="";WS.setMat=null}if(to==="list")WS.jobId=null;N.st=N.st.filter(k=>{try{const o=JSON.parse(k);return !(o.t==="work"&&o.sc&&o.sc!=="list")}catch(e){return true}});return true});
+  N.dirty.push(()=>tab==="work"&&((WS.screen==="photo"&&!!WS.pendingPhoto)||(WS.screen==="cut"&&(WS.cutRows||[]).some(r=>r.qty||r.len))||(WS.screen==="inuse"&&!!WS.iu&&WS.iu.rows.some(r=>r.type||r.amt))));
+  N.clear.push(()=>{WS.pendingPhoto=null;WS.cutRows=[];WS.cutDesc="";WS.iu=null});
 }
-window.TMC.ws=()=>WS;window.TMC.wBal=(mat,desc)=>wOn(mat,desc);window.TMC.wOn=wOn;window.TMC.wStockItems=wStockItems;
+window.TMC.ws=()=>WS;window.TMC.wBal=(mat,desc)=>wOn(mat,desc);window.TMC.wOn=wOn;window.TMC.wStockItems=wStockItems;window.TMC.cutPlan=cutPlan;window.TMC.wStockLenMm=wStockLenMm;window.TMC.wFmt=wFmt;window.TMC.wRowMm=wRowMm;window.TMC.wCuts=wCuts;window.TMC.wSplitJob=wSplitJob;
 /* ==================== APP FEATURES END ==================== */
 function canHTML(u){
   if(u.admin)return `<div class="box"><h2>✅ ${esc(t("can"))}</h2><p><b>${esc(t("canAll"))}</b></p></div>`;
@@ -970,8 +1244,9 @@ function paintSync(){paintNc();
 }
 setInterval(paintSync,2000);addEventListener("online",paintSync);addEventListener("offline",paintSync);
 /* VER 6: small plain message at the bottom (no OK button) */
-function toast(m){let w=$("tmcToast");if(!w){w=document.createElement("div");w.id="tmcToast";w.setAttribute("role","status");w.style.cssText="position:fixed;left:12px;right:12px;bottom:84px;z-index:9999;background:#7c2d12;color:#fff;padding:14px 16px;border-radius:12px;font-size:17px;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.3);text-align:center";document.body.appendChild(w)}w.textContent=m;w.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>{w.style.display="none"},7000)}
+function toast(m){let w=$("tmcToast");if(!w){w=document.createElement("div");w.id="tmcToast";w.setAttribute("role","status");w.style.cssText="background:#7c2d12;color:#fff;padding:14px 16px;border-radius:12px;font-size:17px;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.3);text-align:center";document.body.appendChild(w)}w.textContent=m;w.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>{w.style.display="none"},7000)}
 window.TMC.toast=toast;
+if(navigator.webdriver)window.TMC.popupTest={share:()=>shareModal(),nav:()=>navAsk(()=>{}),dsc:(id,w)=>discardModal(id,w||"reject"),upd:on=>updScreen(on),toast:m=>toast(m),delCut:id=>wDelCut(id)};
 function onData(){const u=me();if(flow&&flow.s==="wait"&&!u){/* stay */}if(!u&&L.get("uid")){signOut();render();return}
   const a=document.activeElement;if(u&&!formDirty&&!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA")))render()}
 

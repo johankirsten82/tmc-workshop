@@ -1078,6 +1078,24 @@ try:
         if line.startswith('  PASS '):R['pass']+=1
         elif line.startswith('  FAIL '):R['fail']+=1;ERR.append(line)
       ok(aa.returncode==0 and 'ADMIN STOCK:' in (aa.stdout or ''),'admin stock script finished clean (exit %d)'%aa.returncode)
+    cpy=os.path.join(APP,'tests','test_cutlist.py')
+    if os.path.exists(cpy):
+      cc=subprocess.run([sys.executable,cpy,APP],capture_output=True,text=True,timeout=300)
+      print(cc.stdout,end='',flush=True)
+      if cc.stderr:print(cc.stderr[-500:],end='',flush=True)
+      for line in (cc.stdout or '').splitlines():
+        if line.startswith('  PASS '):R['pass']+=1
+        elif line.startswith('  FAIL '):R['fail']+=1;ERR.append(line)
+      ok(cc.returncode==0 and 'CUT LIST:' in (cc.stdout or ''),'cut list script finished clean (exit %d)'%cc.returncode)
+    vpy=os.path.join(APP,'tests','test_v4jobs.py')
+    if os.path.exists(vpy):
+      vv=subprocess.run([sys.executable,vpy,APP],capture_output=True,text=True,timeout=300)
+      print(vv.stdout,end='',flush=True)
+      if vv.stderr:print(vv.stderr[-500:],end='',flush=True)
+      for line in (vv.stdout or '').splitlines():
+        if line.startswith('  PASS '):R['pass']+=1
+        elif line.startswith('  FAIL '):R['fail']+=1;ERR.append(line)
+      ok(vv.returncode==0 and 'V4 JOBS:' in (vv.stdout or ''),'v4 jobs script finished clean (exit %d)'%vv.returncode)
   else:skip('no tests/test_workshop.py')
   sec('11. Console errors')
   ok(not ERR,'no console errors %s'%ERR[:5])
