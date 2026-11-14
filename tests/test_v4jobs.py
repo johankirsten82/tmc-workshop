@@ -59,7 +59,7 @@ V4JOBS=[{'id':'j1794300000001','name':'Shaun Bed'},{'id':'j1794300000002','name'
         {'id':'j1794300000004','name':'Elton Bed'},{'id':'j1794300000005','name':'Johan Side Table'},{'id':'j1794300000006','name':'Cliff Bed'}]
 for i,j in enumerate(V4JOBS):j.update(type='build',by='JA Kirsten',at='2026-11-11T%02d:00:00.000Z'%(8+i),example=0)
 SPLIT={'Shaun Bed':('Shaun','Bed'),'Ben Bed':('Ben','Bed'),'Alex Bed':('Alex','Bed'),'Elton Bed':('Elton','Bed'),'Johan Side Table':('Johan','Side Table'),'Cliff Bed':('Cliff','Bed')}
-KEYS=["wjInUse","wjInUseH","wjIuMats","wjIuType","wjIuTypeH","wjIuAmt","wjIuAdd","wjMatH","wjNeedPick","wjNoneTyp","wjDoneH","wjLoc","wjLocChoose","wjLocNone","wjNeedLoc","wjPlace","wjPlaceH","wjIuPhoto","wjJobPhoto","wjSizeEx","wjNeedIu","wjNotStock","wjIuMatsL","wjIuTook","wjPerson","wjPersonH","wjRdItem","wjSaveReady","wjEditFa","wjNoPerson","wjReadyH"]
+KEYS=["wjInUse","wjInUseH","wjIuMats","wjIuType","wjIuTypeH","wjIuAmt","wjIuAdd","wjMatH","wjNeedPick","wjNoneTyp","wjDoneH","wjLoc","wjLocChoose","wjLocNone","wjNeedLoc","wjPlace","wjPlaceH","wjIuPhoto","wjJobPhoto","wjSizeEx","wjNeedIu","wjNotStock","wjIuMatsL","wjIuTook","wjPerson","wjPersonH","wjRdItem","wjSaveReady","wjEditFa","wjNoPerson","wjReadyH","wjAddNew","wjH","wjW","wjLmm","wjUsed","wjQtyShort","wjNewFlag"]
 CHROME='/usr/bin/google-chrome' if os.path.exists('/usr/bin/google-chrome') else None
 def jobs(pg):return pg.evaluate("()=>JSON.stringify(TMC.all('j').slice().sort((a,b)=>a.id<b.id?-1:1))")
 def ks(pg):return pg.evaluate("()=>JSON.stringify(TMC.all('k').slice().sort((a,b)=>a.id<b.id?-1:1))")
@@ -69,11 +69,31 @@ def open_job(pg,jid):
 LOCS=[{'id':'c-alfa','name':'10 Alfa','camp':'10 Alfa','places':[{'id':'p-store','name':'Store A'}]},{'id':'c-bravo','name':'Bravo','camp':'Bravo','places':[]}]
 def pickloc(pg,camp='10 Alfa'):
     pg.click('#wjLocBtn');pg.wait_for_timeout(120);pg.locator('.wjLocPick',has_text=camp).click();pg.wait_for_timeout(120)
-def amt(pg,row,digits):
-    pg.click('.wjIuCell[data-r="%d"]'%row)
-    for d in digits:pg.click('[data-iupad="%s"]'%d)
-def pick(pg,name):
-    pg.locator('.wjIuPick',has_text=name).first.click();pg.wait_for_timeout(150)
+
+def buy_row(pg,row=0):
+    return pg.locator('.wjBuy[data-r="%d"]'%row)
+def pick_buy(pg,name,row=0,new=False):
+    root=buy_row(pg,row)
+    inp=root.locator('.wjBuyName')
+    inp.click();inp.fill(name);pg.wait_for_timeout(200)
+    sug=root.locator('.sug')
+    if new:sug.locator('.wjSugNew').click()
+    else:sug.locator('div[data-n]:not(.wjSugNew)',has_text=name).first.click()
+    pg.wait_for_timeout(200)
+def fill_buy(pg,row,qty=None,used=None,h=None,w=None,l=None):
+    root=buy_row(pg,row)
+    if qty is not None:root.locator('.wjBuyQty').fill(str(qty))
+    if used is not None:root.locator('.wjBuyUsed').fill(str(used))
+    if h is not None:root.locator('.wjBuyH').fill(str(h))
+    if w is not None:root.locator('.wjBuyW').fill(str(w))
+    if l is not None:root.locator('.wjBuyL').fill(str(l))
+    pg.wait_for_timeout(80)
+
+def pick(pg,name,row=None):
+    if row is None:row=max(0,pg.locator('.wjBuy').count()-1)
+    pick_buy(pg,name,row)
+def amt_mm(pg,row,used,qty=1):
+    fill_buy(pg,row,qty=qty,used=str(used))
 try:
   with sync_playwright() as pw:
     b=pw.chromium.launch(executable_path=CHROME,args=['--no-sandbox'])
@@ -101,20 +121,22 @@ try:
     pg.click('#wjInUse');pg.wait_for_timeout(200)
     ok(pg.locator('#wjInUseBox').count()==1 and pg.input_value('#wjIu_person')=='Shaun' and pg.input_value('#wjIu_item')=='Bed','in-use form prefilled: Bed / Shaun')
     ok(pg.locator('#wjIuTake').count()==0 and pg.locator('#wjInUseBox [role=switch]').count()==0,'Admin old-job form has no Take off stock switch')
-    pick(pg,'Square tubing 40×40');amt(pg,0,'12')
-    pick(pg,'Rope 10 mm');amt(pg,1,'8')
+    pick(pg,'Square tubing 40×40',0);amt_mm(pg,0,12000)
+    pg.click('#wjAddMatRow');pg.wait_for_timeout(150)
+    pick(pg,'Rope 10 mm',1);amt_mm(pg,1,8000)
     pg.fill('#wjIu_size','2 m x 1 m');pickloc(pg)
     pg.click('#wjSendIu');pg.wait_for_timeout(400)
     ok(pg.locator('#wjJob').count()==1,'Send to Assets saves and returns to the job')
     ok(ks(pg)==K0 and bal(pg,'steel','Square tubing 40×40')==18 and bal(pg,'rope','Rope 10 mm')==20,'Admin old job: no stock record added or changed (18 m / 20 m)')
     fa=pg.evaluate("()=>TMC.all('fa').find(f=>f.jobId==='j1794300000001')")
     ok(fa and fa['builtBefore']==1 and fa['jobName']=='Shaun Bed' and fa['name']=='Bed' and fa['suggestedPerson']=='Shaun' and fa['size']=='2 m x 1 m' and fa['tookStock']==0 and fa['status']=='waiting' and fa['campId']=='c-alfa' and fa['campName']=='10 Alfa' and fa['placeId']=='' and fa['by']=='JA Kirsten','queued item: built before, location, job id/name, Bed, Shaun, size %s'%fa)
-    ok(fa and [(m['type'],m['qty'],m['unit']) for m in fa['materials']]==[('Square tubing 40×40',12,'m'),('Rope 10 mm',8,'m')],'queued item carries materials %s'%(fa or {}).get('materials'))
+    ok(fa and [(m['type'],m['qty'],m['unit'],m.get('usedMm'),m.get('totalMm')) for m in fa['materials']]==[('Square tubing 40×40',1,'mm',12000,12000),('Rope 10 mm',1,'mm',8000,8000)],'queued item carries materials %s'%(fa or {}).get('materials'))
     # Johan Side Table: Admin old job with materials and an edited person -> still nothing off stock
     open_job(pg,'j1794300000005');pg.click('#wjInUse');pg.wait_for_timeout(200)
     ok(pg.input_value('#wjIu_person')=='Johan' and pg.input_value('#wjIu_item')=='Side Table','Johan Side Table -> Johan / Side Table')
-    pick(pg,'Square tubing 40×40');amt(pg,0,'3')
-    pick(pg,'Rope 10 mm');amt(pg,1,'500');pg.click('[data-iuu="1"][data-u="mm"]');pg.wait_for_timeout(150)
+    pick(pg,'Square tubing 40×40',0);amt_mm(pg,0,3000)
+    pg.click('#wjAddMatRow');pg.wait_for_timeout(150)
+    pick(pg,'Rope 10 mm',1);amt_mm(pg,1,500)
     pg.fill('#wjIu_person','Johan K')
     pg.click('#wjSendIu');pg.wait_for_timeout(300)
     ok(pg.locator('#wjInUseBox').count()==1 and pg.inner_text('#wjErr').strip()!='' and not pg.evaluate("()=>TMC.all('fa').some(f=>f.jobId==='j1794300000005')"),'no location chosen: save refused, form kept %s'%pg.inner_text('#wjErr'))
@@ -131,7 +153,7 @@ try:
     # Assets list
     pg.evaluate("()=>{const w=TMC.ws();w.screen='assets';TMC.render()}");pg.wait_for_timeout(200)
     at=pg.inner_text('#wjAssetsBox')
-    ok('Shaun' in at and 'Square tubing 40×40 12 m' in at and 'Rope 10 mm 8 m' in at and '2 m x 1 m' in at and 'Built before' in at and 'Shaun Bed' in at,'Send to Assets list shows person, materials, size, Built before: %s'%at.replace('\n',' / ')[:300])
+    ok('Shaun' in at and 'Square tubing 40×40 1 × 12000 mm' in at and 'Rope 10 mm 1 × 8000 mm' in at and '2 m x 1 m' in at and 'Built before' in at and 'Shaun Bed' in at,'Send to Assets list shows person, materials, size, Built before: %s'%at.replace('\n',' / ')[:300])
     open_job(pg,'j1794300000001')
     ok(pg.locator('#wjInUse').count()==0 and 'Already on the Assets list' in pg.inner_text('#wjReadyJob'),'finished job cannot be queued twice')
     # v4 Add steel / Add rope records on a job pre-fill the rows (Johan 02:45); never deducted twice
@@ -145,19 +167,19 @@ try:
     J2,K2,M2=jobs(pg),ks(pg),ms(pg);s0=bal(pg,'steel','Square tubing 40×40');r0=bal(pg,'rope','Rope 10 mm')
     # Elton Bed: pre-filled rope 2 m, switch OFF -> no stock change
     open_job(pg,'j1794300000004');pg.click('#wjInUse');pg.wait_for_timeout(200)
-    rows=pg.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,r.amt,r.unit,!!r.pre])")
-    ok(rows==[['Rope 10 mm','2','m',True]] and pg.locator('.wjIuPre').count()==1,'Elton Bed: row pre-filled from its v4 Add rope record %s'%rows)
+    rows=pg.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,String(r.qty),String(r.used),!!r.pre])")
+    ok(rows==[['Rope 10 mm','1','2000',True]] and pg.locator('.wjIuPre').count()==1,'Elton Bed: row pre-filled from its v4 Add rope record %s'%rows)
     pickloc(pg);pg.click('#wjSendIu');pg.wait_for_timeout(400)
     ok(ks(pg)==K2,'Admin old job with pre-filled rows: no stock change')
     # Cliff Bed: pre-filled steel 6 m + rope 4 m, Admin adds 1 m on an old job -> nothing comes off (workers: tests/test_v16.py)
     open_job(pg,'j1794300000006');pg.click('#wjInUse');pg.wait_for_timeout(200)
-    rows=pg.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,r.amt,r.unit,!!r.pre])")
-    ok(rows==[['Square tubing 40×40','6','m',True],['Rope 10 mm','4','m',True]],'Cliff Bed: steel and rope rows pre-filled from v4 records (type, amount, unit) %s'%rows)
-    pick(pg,'Square tubing 40×40');amt(pg,2,'1')
+    rows=pg.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,String(r.qty),String(r.used),!!r.pre])")
+    ok(rows==[['Square tubing 40×40','2','3000',True],['Rope 10 mm','1','4000',True]],'Cliff Bed: steel and rope rows pre-filled from v4 records (type, qty, length used mm) %s'%rows)
+    pg.click('#wjAddMatRow');pg.wait_for_timeout(150);pick(pg,'Square tubing 40×40',2);amt_mm(pg,2,1000)
     pickloc(pg);pg.click('#wjSendIu');pg.wait_for_timeout(400)
     ok(abs(bal(pg,'steel','Square tubing 40×40')-s0)<1e-9 and abs(bal(pg,'rope','Rope 10 mm')-r0)<1e-9 and ks(pg)==K2,'Admin old job: pre-filled and added rows never come off stock')
     fa3=pg.evaluate("()=>TMC.all('fa').find(f=>f.jobId==='j1794300000006')")
-    ok(fa3 and [(m['type'],m['qty'],m['unit'],m.get('jobRecord','')) for m in fa3['materials']]==[('Square tubing 40×40',6,'m','m1794300000101'),('Rope 10 mm',4,'m','m1794300000102'),('Square tubing 40×40',1,'m','')] and fa3['suggestedPerson']=='Cliff','queued item carries pre-filled + added materials %s'%(fa3 or {}).get('materials'))
+    ok(fa3 and [(m['type'],m['qty'],m['unit'],m.get('usedMm'),m.get('jobRecord','')) for m in fa3['materials']]==[('Square tubing 40×40',2,'mm',3000,'m1794300000101'),('Rope 10 mm',1,'mm',4000,'m1794300000102'),('Square tubing 40×40',1,'mm',1000,'')] and fa3['suggestedPerson']=='Cliff','queued item carries pre-filled + added materials %s'%(fa3 or {}).get('materials'))
     oldk=[k for k in json.loads(ks(pg)) if k['id'] in {x['id'] for x in json.loads(K2)}]
     ok(jobs(pg)==J2 and ms(pg)==M2 and json.dumps(sorted(oldk,key=lambda k:k['id']))==json.dumps(sorted(json.loads(K2),key=lambda k:k['id'])),'job records, v4 steel/rope records and old stock records unchanged')
     # repair jobs never get the button

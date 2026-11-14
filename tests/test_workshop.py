@@ -68,16 +68,34 @@ def new_job(pg,title,kind):
     pg.click('#wjSave');pg.wait_for_timeout(400)
 def open_job(pg,title):
     work(pg);pg.locator('.wjOpen',has_text=title).first.click();pg.wait_for_timeout(250)
-def mat_amt(pg,row,digits):
-    pg.click('.wjMatCell[data-r="%d"]'%row)
-    for d in str(digits):
-        pg.click('[data-matpad="%s"]'%('dot' if d in '.,' else d))
+
+def buy_row(pg,row=0):
+    return pg.locator('.wjBuy[data-r="%d"]'%row)
+def pick_buy(pg,name,row=0,new=False):
+    root=buy_row(pg,row)
+    inp=root.locator('.wjBuyName')
+    inp.click();inp.fill(name);pg.wait_for_timeout(200)
+    sug=root.locator('.sug')
+    if new:sug.locator('.wjSugNew').click()
+    else:sug.locator('div[data-n]:not(.wjSugNew)',has_text=name).first.click()
+    pg.wait_for_timeout(200)
+def fill_buy(pg,row,qty=None,used=None,h=None,w=None,l=None):
+    root=buy_row(pg,row)
+    if qty is not None:root.locator('.wjBuyQty').fill(str(qty))
+    if used is not None:root.locator('.wjBuyUsed').fill(str(used))
+    if h is not None:root.locator('.wjBuyH').fill(str(h))
+    if w is not None:root.locator('.wjBuyW').fill(str(w))
+    if l is not None:root.locator('.wjBuyL').fill(str(l))
+    pg.wait_for_timeout(80)
+def mm(length):
+    return str(int(round(float(str(length).replace(",","."))*1000)))
+
 def add_mat(pg,kind,desc,pcs,length):
     pg.click({'steel':'#wjAddSteel','rope':'#wjAddRope','other':'#wjAddOther'}[kind]);pg.wait_for_timeout(200)
-    pg.locator('.wjMatPick',has_text=desc).first.click();pg.wait_for_timeout(200)
-    row=pg.locator('.wjMatRow').count()-1
-    val=length if length is not None else pcs
-    if val is not None:mat_amt(pg,row,val)
+    row=pg.locator('.wjBuy').count()-1
+    pick_buy(pg,desc,row)
+    if length is not None:fill_buy(pg,row,qty=1,used=mm(length))
+    elif pcs is not None:fill_buy(pg,row,qty=pcs)
     pg.click('#wjSaveM');pg.wait_for_timeout(400)
 try:
   with sync_playwright() as pw:
@@ -114,7 +132,7 @@ try:
     ok(pg.evaluate("TMC.wBal('steel','EXAMPLE angle iron').qty")==20 and pg.evaluate("TMC.all('k').filter(k=>k.dir==='in').length")==3,'duplicate did not add a second credit')
     pg.click('#view .navBack');pg.wait_for_timeout(250)
     open_job(pg,'EXAMPLE Gate frame')
-    pg.click('#wjAddSteel');pg.wait_for_timeout(200);pg.locator('.wjMatPick',has_text='EXAMPLE angle iron').first.click();pg.wait_for_timeout(150);mat_amt(pg,0,'999');pg.click('#wjSaveM');pg.wait_for_timeout(300)
+    pg.click('#wjAddSteel');pg.wait_for_timeout(200);pick_buy(pg,'EXAMPLE angle iron',0);fill_buy(pg,0,qty=1,used='999000');pg.click('#wjSaveM');pg.wait_for_timeout(300)
     ok(pg.locator('#wjMat').count()==1 and 'Not enough' in pg.inner_text('#wjErr'),'over-allocation stays on the form')
     ok(pg.evaluate("TMC.wBal('steel','EXAMPLE angle iron').qty")==20,'failed save does not deduct stock')
     pg.click('#view .navBack');pg.wait_for_timeout(200)
@@ -128,9 +146,9 @@ try:
     add_mat(pg,'rope','EXAMPLE rope',None,'12.5')
     ok('12.5 m' in pg.inner_text('#wjTot'),'decimal rope length 12.5 m is kept')
     pg.click('#wjAddRope');pg.wait_for_timeout(200);pg.click('#wjSaveM');pg.wait_for_timeout(300)
-    ok(pg.locator('#wjMat').count()==1 and pg.locator('.wjMatRow').count()==0,'save with no item stays on the form')
-    pg.locator('.wjMatPick',has_text='EXAMPLE rope').first.click();pg.wait_for_timeout(150);pg.click('#wjSaveM');pg.wait_for_timeout(300)
-    ok(pg.locator('#wjMat').count()==1 and 'EXAMPLE rope' in pg.inner_text('#wjMatRows'),'save with no length stays on the form and keeps the picked item')
+    ok(pg.locator('#wjMat').count()==1 and not (pg.locator('.wjBuyName').first.input_value() or '').strip(),'save with no item stays on the form')
+    pick_buy(pg,'EXAMPLE rope',0);pg.click('#wjSaveM');pg.wait_for_timeout(300)
+    ok(pg.locator('#wjMat').count()==1 and 'EXAMPLE rope' in pg.locator('.wjBuyName').first.input_value(),'save with no length stays on the form and keeps the picked item')
     pg.click('#view .navBack');pg.wait_for_timeout(200)
     if pg.locator('#navAsk').count():pg.click('#navYes');pg.wait_for_timeout(200)
     ok(pg.locator('#wjJob').count()==1,'Back from a bad entry returns to the job')
@@ -187,6 +205,14 @@ try:
     ok(g.locator('.wjRow',has_text='EXAMPLE rope').count()==3,'staff allocated a rope length from workshop stock')
     ok(g.evaluate("TMC.wBal('rope','EXAMPLE rope').len")==20.75,'rope on hand dropped by exactly 2.5 m')
     ok(g.evaluate("[TMC.wBal('steel','EXAMPLE angle iron').qty,TMC.wBal('steel','EXAMPLE angle iron').len,TMC.wBal('rope','EXAMPLE rope').len].every(n=>n>=0)"),'stock does not go negative')
+    s0=g.evaluate("JSON.stringify(TMC.wBal('steel','EXAMPLE angle iron'))")
+    r0=g.evaluate("TMC.wBal('rope','EXAMPLE rope').len")
+    g.click('#wjAddSteel');g.wait_for_timeout(200)
+    pick_buy(g,'Hex bar 20 x 20',0,new=True);fill_buy(g,0,qty=1,used='1500',h=20,w=20,l=3000);g.click('#wjSaveM');g.wait_for_timeout(400)
+    neu=g.evaluate("TMC.all('m').filter(m=>m.new)")
+    ok(g.locator('#wjJob').count()==1 and neu and neu[-1]['desc']=='Hex bar 20 x 20' and neu[-1].get('new')==1 and neu[-1].get('hMm')==20 and neu[-1].get('wMm')==20 and neu[-1].get('lMm')==3000 and neu[-1].get('usedMm')==1500,'new item is saved on the job with new:1, dimensions and length used')
+    ok(g.evaluate("JSON.stringify(TMC.wBal('steel','EXAMPLE angle iron'))")==s0 and g.evaluate("TMC.wBal('rope','EXAMPLE rope').len")==r0 and not g.evaluate("TMC.all('k').some(k=>k.dir==='out'&&k.desc==='Hex bar 20 x 20')"),'a new item takes nothing off Workshop stock')
+
     # other app on the same phone
     o=ctx();op=o.new_page();op.goto(OTHER);op.wait_for_selector('#fName')
     name(op,'Johan Kirsten');setpin(op,'9753');synced(op)

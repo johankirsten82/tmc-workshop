@@ -63,6 +63,27 @@ def stock(pg):
 def demo_words(txt):
     low=txt.lower()
     return [w for w in ('sample only','queue example','example from food','exemple seulement','voorbeeld','queue an example','not connected') if w in low]
+
+def buy_row(pg,row=0):
+    return pg.locator('.wjBuy[data-r="%d"]'%row)
+def pick_buy(pg,name,row=0,new=False):
+    root=buy_row(pg,row)
+    inp=root.locator('.wjBuyName')
+    inp.click();inp.fill(name);pg.wait_for_timeout(200)
+    sug=root.locator('.sug')
+    if new:sug.locator('.wjSugNew').click()
+    else:sug.locator('div[data-n]:not(.wjSugNew)',has_text=name).first.click()
+    pg.wait_for_timeout(200)
+def fill_buy(pg,row,qty=None,used=None,h=None,w=None,l=None):
+    root=buy_row(pg,row)
+    if qty is not None:root.locator('.wjBuyQty').fill(str(qty))
+    if used is not None:root.locator('.wjBuyUsed').fill(str(used))
+    if h is not None:root.locator('.wjBuyH').fill(str(h))
+    if w is not None:root.locator('.wjBuyW').fill(str(w))
+    if l is not None:root.locator('.wjBuyL').fill(str(l))
+    pg.wait_for_timeout(80)
+def mm(length):
+    return str(int(round(float(str(length).replace(",","."))*1000)))
 try:
   with sync_playwright() as pw:
     b=pw.chromium.launch(executable_path='/usr/bin/google-chrome' if os.path.exists('/usr/bin/google-chrome') else None,args=['--no-sandbox'])
@@ -119,18 +140,14 @@ try:
     pg.fill('#wjName','Gate');pg.click('#wjSave');pg.wait_for_timeout(400)
     pg.locator('.wjOpen',has_text='Gate').first.click();pg.wait_for_timeout(250)
     pg.click('#wjAddSteel');pg.wait_for_timeout(200)
-    pg.locator('.wjMatPick',has_text='Square tubing').first.click();pg.wait_for_timeout(150)
-    pg.click('.wjMatCell[data-r="0"]')
-    for d in '11':pg.click('[data-matpad="%s"]'%d)
+    pick_buy(pg,'Square tubing',0);fill_buy(pg,0,qty=11)
     pg.click('#wjSaveM');pg.wait_for_timeout(300)
     ok(pg.locator('#wjMat').count()==1 and 'Not enough' in pg.inner_text('#wjErr'),'job cannot take 11 Square tubing')
     ok(pg.evaluate("TMC.wBal('steel','Square tubing').qty")==10,'failed 11 does not deduct stock')
     pg.click('#view .navBack');pg.wait_for_timeout(200)
     if pg.locator('#navAsk').count():pg.click('#navYes');pg.wait_for_timeout(200)
     pg.click('#wjAddSteel');pg.wait_for_timeout(200)
-    pg.locator('.wjMatPick',has_text='Square tubing').first.click();pg.wait_for_timeout(150)
-    pg.click('.wjMatCell[data-r="0"]')
-    for d in '10':pg.click('[data-matpad="%s"]'%d)
+    pick_buy(pg,'Square tubing',0);fill_buy(pg,0,qty=10)
     pg.click('#wjSaveM');pg.wait_for_timeout(400)
     ok(pg.locator('#wjJob').count()==1,'job can use exactly 10 Square tubing')
     ok(pg.evaluate("TMC.wBal('steel','Square tubing').qty")==0,'on-hand dropped to 0 after using 10')
@@ -172,7 +189,7 @@ try:
     ok('Square tubing' in shop_dump and 'OTHER APP TUBING' not in shop_dump,'workshop Sheet has workshop stock only')
     ok('OTHER APP TUBING' in oth_dump and 'Square tubing' not in oth_dump,'other Sheet does not receive workshop stock')
     sw=open(os.path.join(TMP,'shop','sw.js'),encoding='utf-8').read()
-    ok('APP="tmcworkshop"' in sw and '-v1.6.1' in sw,'cache name is tmcworkshop-v1.6.1')
+    ok('APP="tmcworkshop"' in sw and '-v1.7.0' in sw,'cache name is tmcworkshop-v1.7.0')
     ok('tmcother-v' in open(os.path.join(TMP,'other','sw.js'),encoding='utf-8').read(),'other app cache name differs')
     ok(not errs,'no page errors %s'%errs[:3])
     b.close()

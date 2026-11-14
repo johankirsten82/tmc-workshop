@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v1.6.1: worker "Job finished: send to Assets", location from Assets (A-Z), photo, version label, server send (fake Assets). Mock Sheet only.
+"""v1.7.0: worker "Job finished: send to Assets", location from Assets (A-Z), photo, version label, server send (fake Assets). Mock Sheet only.
   python3 tests/test_v16.py /path/to/workshop
 """
 import os,sys,re,json,shutil,socket,subprocess,tempfile,threading,urllib.request,urllib.parse
@@ -53,11 +53,35 @@ def open_job(pg,jid):
 def screen(pg,sc):
     pg.click('nav [data-tab=work]');pg.wait_for_timeout(150)
     pg.evaluate("s=>{const w=TMC.ws();w.screen=s;w.jobId=null;TMC.render()}",sc);pg.wait_for_timeout(250)
-def amt(pg,row,digits):
-    pg.click('.wjIuCell[data-r="%d"]'%row)
-    for d in digits:pg.click('[data-iupad="%s"]'%d)
-def pick(pg,name):
-    pg.locator('.wjIuPick',has_text=name).first.click();pg.wait_for_timeout(150)
+
+def buy_row(pg,row=0):
+    return pg.locator('.wjBuy[data-r="%d"]'%row)
+def pick_buy(pg,name,row=0,new=False):
+    root=buy_row(pg,row)
+    inp=root.locator('.wjBuyName')
+    inp.click();inp.fill(name);pg.wait_for_timeout(200)
+    sug=root.locator('.sug')
+    if new:sug.locator('.wjSugNew').click()
+    else:sug.locator('div[data-n]:not(.wjSugNew)',has_text=name).first.click()
+    pg.wait_for_timeout(200)
+def fill_buy(pg,row,qty=None,used=None,h=None,w=None,l=None):
+    root=buy_row(pg,row)
+    if qty is not None:root.locator('.wjBuyQty').fill(str(qty))
+    if used is not None:root.locator('.wjBuyUsed').fill(str(used))
+    if h is not None:root.locator('.wjBuyH').fill(str(h))
+    if w is not None:root.locator('.wjBuyW').fill(str(w))
+    if l is not None:root.locator('.wjBuyL').fill(str(l))
+    pg.wait_for_timeout(80)
+def mm(length):
+    return str(int(round(float(str(length).replace(",","."))*1000)))
+
+def pick(pg,name,row=None):
+    if row is None:row=max(0,pg.locator('.wjBuy').count()-1)
+    pick_buy(pg,name,row)
+def amt(pg,row,digits,unit_mm=False):
+    # digits is a metre string like '3' or '99', or already mm when unit_mm
+    used=str(int(''.join(digits))) if unit_mm else mm(''.join(digits))
+    fill_buy(pg,row,qty=1,used=used)
 def pickloc(pg,camp):
     pg.click('#wjLocBtn');pg.wait_for_timeout(150);pg.locator('.wjLocPick',has_text=camp).first.click();pg.wait_for_timeout(150)
 def bal(pg,mat,d):return pg.evaluate("([m,d])=>TMC.wBal(m,d).len",[mat,d])
@@ -83,21 +107,21 @@ try:
     name(pg,'Johan Kirsten');pg.wait_for_selector('#fPin2');setpin(pg,'2468')
     # --- version label + cache ---
     sw=open(os.path.join(TMP,'shop','sw.js'),encoding='utf-8').read()
-    ok('V=APP+"-v1.6.1"' in sw and pg.evaluate("TMC.verLabel()")=='v1.6.1','sw.js cache is tmcworkshop-v1.6.1 and the label is "v1.6.1"')
+    ok('V=APP+"-v1.7.0"' in sw and pg.evaluate("TMC.verLabel()")=='v1.7.0','sw.js cache is tmcworkshop-v1.7.0 and the label is "v1.7.0"')
     def vchk(pg):
         return pg.evaluate("""()=>{const v=document.getElementById('hVer'),n=document.querySelector('header .tN');if(!v)return null;const cs=getComputedStyle(v),r=v.getBoundingClientRect(),rn=n.getBoundingClientRect();
           return {txt:v.textContent,fs:cs.fontSize,col:cs.color,ws:cs.whiteSpace,lines:v.getClientRects().length,h:r.height,below:r.top>=rn.bottom-1,right:Math.abs(r.right-rn.right)<2,left:Math.abs(r.left-rn.left)<2,vis:r.width>0&&r.right<=innerWidth&&r.left>=0&&(()=>{const t=document.querySelector('header .t').getBoundingClientRect();return r.left>=t.left-1&&r.right<=t.right+1})()}}""")
     bad=[]
     for tab in pg.evaluate("[...document.querySelectorAll('nav [data-tab]')].map(e=>e.dataset.tab)"):
         pg.click('nav [data-tab=%s]'%tab);pg.wait_for_timeout(200);v=vchk(pg)
-        if not(v and v['txt']=='v1.6.1' and v['fs']=='10px' and v['col']=='rgb(51, 51, 51)' and v['ws']=='nowrap' and v['lines']==1 and v['h']<16 and v['below'] and v['vis']):bad.append((tab,v))
+        if not(v and v['txt']=='v1.7.0' and v['fs']=='10px' and v['col']=='rgb(51, 51, 51)' and v['ws']=='nowrap' and v['lines']==1 and v['h']<16 and v['below'] and v['vis']):bad.append((tab,v))
     for sc in ('list','assets'):
         pg.click('nav [data-tab=work]');screen(pg,sc);v=vchk(pg)
-        if not(v and v['txt']=='v1.6.1' and v['fs']=='10px' and v['lines']==1):bad.append((sc,v))
-    ok(not bad,'version label "v1.6.1" under the app name on every screen: 10px, #333333, one line at 360px %s'%bad)
+        if not(v and v['txt']=='v1.7.0' and v['fs']=='10px' and v['lines']==1):bad.append((sc,v))
+    ok(not bad,'version label "v1.7.0" under the app name on every screen: 10px, #333333, one line at 360px %s'%bad)
     pg.click('nav [data-tab=home]');pg.wait_for_timeout(150);ok(vchk(pg)['left'],'English: label starts on the left under the name')
     pg.select_option('#hLang','ar');pg.wait_for_timeout(300);v=vchk(pg)
-    ok(v and v['right'] and v['lines']==1 and v['txt']=='v1.6.1' and pg.evaluate("document.documentElement.dir")=='rtl','Arabic: label mirrored to the right, Latin digits, one line %s'%v)
+    ok(v and v['right'] and v['lines']==1 and v['txt']=='v1.7.0' and pg.evaluate("document.documentElement.dir")=='rtl','Arabic: label mirrored to the right, Latin digits, one line %s'%v)
     pg.select_option('#hLang','en');pg.wait_for_timeout(300)
     # --- data: stock + jobs ---
     pg.evaluate("""jobs=>{const at=new Date().toISOString();
@@ -145,15 +169,17 @@ try:
     ok([e.inner_text() for e in g.locator('#wjPlList .wjPlPick').all()]==['Alpha','beta','Store A','zeta'] and g.get_attribute('#wjLocPlace','maxlength')=='60','chosen camp shows its places A-Z and a typed Place (max 60)')
     # c. not in stock / too much refused
     K0=ks(g)
-    g.evaluate("()=>{const w=TMC.ws();w.iu.rows=[{type:'Flat bar 30 mm',amt:'2',unit:'m'}];TMC.render()}");g.wait_for_timeout(150)
+    g.evaluate("()=>{const w=TMC.ws();w.iu.rows=[{type:'Flat bar 30 mm',qty:'1',used:'2000',mat:'steel',h:'',w:'',l:'',isNew:false,pre:'',piece:false,stock:false}];TMC.render()}");g.wait_for_function("()=>{const i=document.querySelector('.wjBuyName'),q=document.querySelector('.wjBuyQty');return i&&i.value.indexOf('Flat bar')>=0&&q&&q.value==='1'}",timeout=5000)
     g.click('#wjSendIu');g.wait_for_timeout(300)
     ok(g.locator('#wjInUseBox').count()==1 and 'Flat bar 30 mm' in g.inner_text('#wjErr') and ks(g)==K0 and not fa(g,'j1794300000002'),'worker: material not in stock is refused, nothing saved')
-    ok(g.locator('.wjIuPick',has_text='Flat bar 30 mm').count()==0,'an item not in Workshop stock is not on the pick list')
-    g.evaluate("()=>{const w=TMC.ws();w.iu.rows=[];TMC.render()}");g.wait_for_timeout(150)
-    pick(g,'Square tubing 40×40');amt(g,0,'99');g.click('#wjSendIu');g.wait_for_timeout(300)
+    buy_row(g,0).locator('.wjBuyName').click();buy_row(g,0).locator('.wjBuyName').fill('Flat bar 30 mm');g.wait_for_timeout(200)
+    ok(g.locator('.sug div[data-n]:not(.wjSugNew)').count()==0 and g.locator('.wjSugNew').count()==1,'an item not in Workshop stock is not a drop-down match; Add new item is offered')
+    g.evaluate("()=>{const w=TMC.ws();w.iu.rows=[{type:'',qty:'',used:'',mat:'',h:'',w:'',l:'',isNew:false,pre:'',piece:false,stock:false}];TMC.render()}");g.wait_for_timeout(150)
+    pick(g,'Square tubing 40×40',0);fill_buy(g,0,qty=1,used='99000');g.click('#wjSendIu');g.wait_for_timeout(300)
     ok(g.locator('#wjInUseBox').count()==1 and ks(g)==K0 and not fa(g,'j1794300000002'),'worker: more than on hand is refused')
-    g.click('.wjIuCell[data-r="0"]');g.click('[data-iupad="bk"]');g.click('[data-iupad="bk"]');amt(g,0,'3')
-    pick(g,'Rope 10 mm');amt(g,1,'500');g.click('[data-iuu="1"][data-u="mm"]');g.wait_for_timeout(150)
+    fill_buy(g,0,qty=1,used='3000')
+    g.click('#wjAddMatRow');g.wait_for_timeout(150)
+    pick(g,'Rope 10 mm',1);fill_buy(g,1,qty=1,used='500');g.wait_for_timeout(150)
     g.fill('#wjLocPlace','store a')
     g.click('#wjSendIu');g.wait_for_timeout(500)
     f1=fa(g,'j1794300000002')
@@ -163,10 +189,10 @@ try:
     ok(f1 and not f1.get('photo'),'no photo: item saved without one')
     # pre-filled rows never deducted twice (Cliff Bed)
     open_job(g,'j1794300000006');g.click('#wjFinishW');g.wait_for_timeout(300)
-    rows=g.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,r.amt,!!r.pre])")
-    ok(rows==[['Square tubing 40×40','6',True],['Rope 10 mm','4',True]],'worker form pre-filled from the v4 records %s'%rows)
+    rows=g.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,String(r.qty),String(r.used),!!r.pre])")
+    ok(rows==[['Square tubing 40×40','2','3000',True],['Rope 10 mm','1','4000',True]],'worker form pre-filled from the v4 records %s'%rows)
     s0=bal(g,'steel','Square tubing 40×40');r0=bal(g,'rope','Rope 10 mm')
-    pick(g,'Square tubing 40×40');amt(g,2,'1')
+    g.click('#wjAddMatRow');g.wait_for_timeout(150);pick(g,'Square tubing 40×40',2);fill_buy(g,2,qty=1,used='1000')
     pickloc(g,'gz - Ground Zero');g.fill('#wjLocPlace','Mid shed');g.set_input_files('input[data-ph="wjIuPh"]:not([capture])',PHOTO);g.wait_for_timeout(700)
     ok(g.locator('#wjIuPic').count()==1,'Add photo shows the new photo on the form')
     g.click('#wjSendIu');g.wait_for_timeout(600)
@@ -179,7 +205,7 @@ try:
     ok([p['name'] for p in cl['places']]==['Mid shed'],'the new place joins the local list %s'%cl['places'])
     # re-sorted after adding (10 Alfa: Alpha, beta, Mid, Store A, zeta)
     open_job(g,'j1794300000003');g.click('#wjFinishW');g.wait_for_timeout(300)
-    pick(g,'Rope 10 mm');amt(g,0,'1');pickloc(g,'10 Alfa');g.fill('#wjLocPlace','Mid');g.click('#wjSendIu');g.wait_for_timeout(500)
+    pick(g,'Rope 10 mm',0);fill_buy(g,0,qty=1,used='1000');pickloc(g,'10 Alfa');g.fill('#wjLocPlace','Mid');g.click('#wjSendIu');g.wait_for_timeout(500)
     al=[l for l in g.evaluate("TMC.wLocs()") if l['id']=='c-alfa'][0]
     ok([p['name'] for p in al['places']]==['Alpha','beta','Mid','Store A','zeta'],'place list re-sorted A-Z after a new place %s'%[p['name'] for p in al['places']])
     open_job(g,'j1794300000007');g.click('#wjFinishW');g.wait_for_timeout(300);pickloc(g,'10 Alfa')
@@ -189,7 +215,7 @@ try:
     # job photo reused (Elton Bed has a job photo)
     open_job(g,'j1794300000004');g.click('#wjFinishW');g.wait_for_timeout(300)
     ok(g.locator('input[data-ph="wjIuPh"]').count()==0 and "photo is used" in g.inner_text('#wjInUseBox'),'job with a photo: the job photo is reused, no Add photo button')
-    pick(g,'Rope 10 mm');amt(g,0,'1');pickloc(g,'Production');g.click('#wjSendIu');g.wait_for_timeout(500)
+    pick(g,'Rope 10 mm',0);fill_buy(g,0,qty=1,used='1000');pickloc(g,'Production');g.click('#wjSendIu');g.wait_for_timeout(500)
     f4=fa(g,'j1794300000004')
     ok(f4 and f4.get('photo')=='phjob4','item references the job photo %s'%(f4 or {}).get('photo'))
     open_job(g,'j1794300000002')
@@ -211,7 +237,7 @@ try:
         g.select_option('#hLang',l);g.wait_for_timeout(200)
         open_job(g,'j1794300000007');g.click('#wjFinishW');g.wait_for_timeout(300)
         shown=g.inner_text('#wjLocBox') if g.locator('#wjLocBox').count() else ''
-        pick(g,'Rope 10 mm');amt(g,0,'1');g.click('#wjSendIu');g.wait_for_timeout(300)
+        pick(g,'Rope 10 mm',0);fill_buy(g,0,qty=1,used='1000');g.click('#wjSendIu');g.wait_for_timeout(300)
         msgs[l]=(g.evaluate("l=>TMC.T[l].wjLocNone",l),shown,g.inner_text('#wjErr'))
         g.click('#view .navBack');g.wait_for_timeout(200)
         if g.locator('#navAsk').count():g.click('#navYes');g.wait_for_timeout(200)
@@ -221,7 +247,7 @@ try:
     # Admin: Already built form + Add item built before need a location
     pg.evaluate("TMC.L.del('assetsLoc')");open_job(pg,'j1794300000007');pg.click('#wjInUse');pg.wait_for_timeout(900)
     ok(pg.locator('#wjLocBtn').count()==1 and pg.locator('#wjIuTake').count()==0,'Admin Already built form: location list loaded from our server, no stock switch')
-    K1=ks(pg);pick(pg,'Rope 10 mm');amt(pg,0,'1');pg.click('#wjSendIu');pg.wait_for_timeout(300)
+    K1=ks(pg);pick(pg,'Rope 10 mm',0);fill_buy(pg,0,qty=1,used='1000');pg.click('#wjSendIu');pg.wait_for_timeout(300)
     ok(pg.locator('#wjInUseBox').count()==1 and pg.inner_text('#wjErr').strip()!='' and not fa(pg,'j1794300000007'),'Admin old job without a location: refused')
     pickloc(pg,'gz - Ground Zero');pg.click('#wjSendIu');pg.wait_for_timeout(500);f7=fa(pg,'j1794300000007')
     ok(f7 and f7['builtBefore']==1 and f7['tookStock']==0 and f7['campName']=='gz - Ground Zero' and ks(pg)==K1,'Admin old job: location saved, nothing off stock')
@@ -262,5 +288,5 @@ try:
 finally:
     for gproc in gas:gproc.terminate()
     srv.shutdown();shutil.rmtree(TMP,ignore_errors=True)
-print('V1.6.1: %d passed, %d failed'%(P,F))
+print('V1.7.0: %d passed, %d failed'%(P,F))
 sys.exit(1 if F else 0)
