@@ -54,6 +54,11 @@ def back(pg):
         pg.click('#view .navBack');pg.wait_for_timeout(250)
     if pg.locator('#navAsk').count():
         pg.click('#navYes');pg.wait_for_timeout(250)
+LOCS=[{'id':'c-alfa','name':'10 Alfa','camp':'10 Alfa','places':[{'id':'p-store','name':'Store A'}]},{'id':'c-bravo','name':'Bravo','camp':'Bravo','places':[]}]
+def seedloc(pg):  # v1.6.0: location list from Assets, as the phone stores it
+    pg.evaluate("l=>TMC.L.set('assetsLoc',JSON.stringify({at:Date.now(),locations:l}))",LOCS)
+def pickloc(pg,camp='10 Alfa'):
+    pg.click('#wjLocBtn');pg.wait_for_timeout(120);pg.locator('.wjLocPick',has_text=camp).click();pg.wait_for_timeout(120)
 NEW_KEYS=["wjCut","wjCutNew","wjCutH","wjCutMat","wjNeedMat","wjAddRow","wjDelRow","wjNeedCut",
  "wjNeedQtyLen","wjPerUnit","wjAllUnits","wjLengths","wjMm","wjM","wjPadOk","wjSaveCut","wjNoCut",
  "wjCuts","wjStockLen","wjStockLenH","wjStockLenT","wjSaveLen","wjNeedStockLen","wjSetLen","wjNoneM",
@@ -191,8 +196,8 @@ try:
             pg.locator('.wjOpen',has_text='Ward beds').click();pg.wait_for_timeout(250)
         else:
             work(pg);pg.locator('.wjOpen',has_text='Ward beds').click();pg.wait_for_timeout(250)
-    pg.click('#wjMarkReady');pg.wait_for_timeout(300)
-    if pg.locator('#wjSaveReady').count():pg.click('#wjSaveReady');pg.wait_for_timeout(400)
+    seedloc(pg);pg.click('#wjMarkReady');pg.wait_for_timeout(300)
+    if pg.locator('#wjSaveReady').count():pickloc(pg);pg.click('#wjSaveReady');pg.wait_for_timeout(400)
     # afterSave may return to the list; open Assets
     ok(pg.locator('#wjJob').count()==1,'Save on the finished form returns to the job')
     if pg.locator('#wjAssetsBox').count()==0:
@@ -206,7 +211,7 @@ try:
     # built before
     pg.click('#wjAddBefore');pg.wait_for_timeout(250)
     ok(pg.locator('#wjBeforeBox').count()==1 and pg.locator('#wjSaveFa').count()==1,'built-before form opened')
-    pg.fill('#wjFaName','Table');pg.fill('#wjFaQty','3');pg.fill('#wjFaSize','old stock')
+    pg.fill('#wjFaName','Table');pg.fill('#wjFaQty','3');pg.fill('#wjFaSize','old stock');pickloc(pg,'Bravo')
     before_bal=pg.evaluate("TMC.wBal('steel','Square tubing 40×40')")
     pg.click('#wjSaveFa');pg.wait_for_timeout(400)
     ok(pg.locator('#wjAssetsBox').count()==1 and pg.locator('#wjBeforeBox').count()==0,'Save built-before closes onto the Assets list')

@@ -1,181 +1,102 @@
-# Workshop → TMC Assets transfer (design only)
+# Workshop → TMC Assets transfer, v2 (Workshop v1.6.0)
 
-**Not connected. Not deployed. Not agreed.**
+**Status: the contract is agreed with TMC Assets (14 Nov 2026, 06:17–06:32). Code.gs is a DRAFT and is NOT deployed.** It goes live only after phones are on v1.6.0, the two codes are filled in, and Johan says yes.
 
-This is a proposed server-to-server contract, in the same shape as `stock-transfer-contract-v1.md` (Food → Workshop/Service stock). Workshop would send finished items to TMC Assets. Assets would assign a tent and a person. Camp is **10 Alfa**.
+The style follows `stock-transfer-contract-v1.md`: server-to-server, `text/plain` JSON POST, idempotent by id, and each app keeps its own data (no shared Sheet, cache, users or PINs).
 
-It needs **the TMC Assets bot's agreement** and **Johan's yes** before anyone writes Code.gs, turns a link on, or sends a real item. Until then the Workshop phone only keeps a local "Send to Assets" list. Nothing is posted.
+v2 changes since v1: location fields (camp + place), photo (https only), `by` = the worker who sends it, `type`, the final reply and error codes, the Script Property names, and `wsf-<id>`.
 
-## Apps
+## Apps and settings
 
-| Role | App | `APP_ID` / `sourceApp` |
+| | Value | Where |
 | --- | --- | --- |
-| Sender | TMC Workshop | `tmcworkshop` |
-| Receiver | TMC Assets | The Assets app's own public `APP_ID` (Workshop does not invent one) |
+| Sender | TMC Workshop, `sourceApp: "tmcworkshop"` | `APP_ID` in Code.gs |
+| Receiver | TMC Assets, `destinationApp: "tmcassets"` | `ASSETS.APP_ID` (can be overridden by the property `ASSETS_APP_ID`) |
+| Assets URL | `https://script.google.com/macros/s/AKfycbx4YSwRNb7fRIWeaU3RZyTslblvkYwDcGn5TPzODOB-GKffBOt8ds9oOK1hx1DExUq5/exec` (public) | `ASSETS.URL` (can be overridden by `ASSETS_URL`) |
+| Item code | for `importFinishedItem` | Script Property `ASSETS_WORKSHOP_CODE` (**empty in the draft**) |
+| Locations read code | for `listLocations` | Script Property `ASSETS_LOCATIONS_READ` (**empty in the draft**) |
 
-Do not share a Sheet, cache, user list, or PIN. Do not reuse the Food stock-transfer import code, the team code, or any other app's `/exec` URL.
+All Assets names (actions, property names, result and error words, field mapping) live in **one place**: the `ASSETS` object and `assetsItem_()` in `sync/Code.gs`. The phone never holds the Assets URL, the codes or the Assets action names.
 
-## What Workshop would send
+If the URL, the app id or the item code is empty, nothing is sent and every item stays `waiting`.
 
-A finished item already on the Workshop "Send to Assets" list. Both kinds go to Assets **the same way**, with the **same action and the same payload shape**:
+## 1. Locations (read only)
 
-- **A finished Build job** (the main source). The existing jobs in the Work list are the source, read unchanged (v4 job records `{id, name, type:"build", by, at, example}` included). Two ways for Admin to finish one:
-  - **Job finished: send to Assets** on a job with a cut list (`builtBefore: false`, with `jobId` / `jobName`). The cut list already took its metres off stock.
-  - **Already built (in use)** on an existing job that was built before (e.g. Shaun Bed, Johan Side Table). Admin adds the materials and the size, then taps Send to Assets (`builtBefore: true`, **with** `jobId` / `jobName`). By default no stock is taken. A **Take off stock** switch (default OFF) takes the metres off Workshop stock like a cut list (`tookStock: true`).
-- **Added by Admin as Built before** with no job (`builtBefore: true`, `jobId` and `jobName` empty, no stock taken).
+The Workshop server asks Assets:
 
-A built-before item **may carry a `jobId`** when it comes from an existing job. `builtBefore` with an empty `jobId` means it was added without a job.
+```
+POST text/plain  {"action":"listLocations","code":"<ASSETS_LOCATIONS_READ>"}
+→ {"ok":true,"locations":[{"id":"…","name":"10 Alfa","camp":"10 Alfa","places":[{"id":"…","name":"Store A"}]}]}
+```
 
-The job record itself is never changed or rewritten. The finished state comes from the queued item (`fa` record id `fa-<jobId>`, one per job).
+There is one row per camp, and `places` is `[]` when a camp has none. Camp names are shown exactly as Assets gives them in `name` (e.g. `HQ - Headquarters`, `GZ - Ground Zero`, `10 Alfa`, `Production`). The app hard-codes no camp names.
 
-**Suggested person.** The person in the job name is sent as `suggestedPerson`: the leading word(s) before the item word ("Shaun Bed" → `Shaun` + `Bed`, "Johan Side Table" → `Johan` + `Side Table`). Admin can edit the item name and the person before saving. It is only a suggestion; Assets staff still choose who has it.
+- **Server:** the action `assetsLocations` (signed-in token only) returns `{ok, locations, at}` from the Script cache, with a Script Property copy as the fallback. It refreshes from Assets at most once an hour. If Assets is offline, the last list is kept. With no read code it returns the cached list, or `[]`.
+- **Phone:** it stores the list in `tmcworkshop_assetsLoc` (`{at, locations}`) and re-asks at most every 10 minutes while online. Camps and places are shown **A–Z, case-insensitive** (Johan 06:24). Assets already sends them sorted; the phone sorts again anyway.
+- **Forms:** location is required on the worker finish form, the Admin "Already built (in use)" form, the "Add item built before" form and the Edit form. It is a big camp pick list, then the camp's places, plus an optional typed **Place** (max 60 characters).
+  - A typed name that matches an existing place (same name, ignoring case and accents) reuses that place's id. Otherwise it is a new place: `placeId: ""` and `placeName` filled in.
+  - A new place joins the phone's local list right away (re-sorted A–Z) until the next list comes from Assets.
+- **No list** (empty or offline): saving is blocked with "Location list not loaded yet, try again with network". The message exists in all 4 languages.
 
-The "Send to Assets" list treats them the same: both sit on the list with status `waiting` ("Waiting for Assets") and are sent with this contract. The `builtBefore` flag only records how the item was added. It is not a different transfer.
+## 2. Finished items
 
-Each item is sent once. A retry uses the same id and must not create a second item in Assets.
+Sources (all go out the same way):
 
-## How Workshop would send (future)
+- **Worker:** "Job finished: send to Assets", the one button a worker sees on a Build job. `by` = the signed-in worker. The worker's added materials **always** come off Workshop stock; there is no switch.
+  - Rows pre-filled from the v4 Add steel/rope records were already deducted then, so they are never deducted again.
+  - A material not in stock, or more than is on hand, is refused with the existing message.
+- **Admin, Build job with a cut list:** "Job finished: send to Assets" (unchanged; the cut list already took the metres off stock).
+- **Admin only, old job:** "Already built (in use)", with `builtBefore: true`. Nothing comes off stock, and there is no switch.
+- **Admin only:** "Add item built before" with no job.
 
-Same shape as Food's stock handover: the Workshop Apps Script POSTs `text/plain` JSON to the Assets `/exec`. The phone never holds the Assets URL or import code.
+There is no Admin check: saving puts the item on Send to Assets as `waiting` ("Waiting for Assets"). Admin can still Edit it, and **`by` stays the original worker**. The job record is never changed.
 
-Script properties (all empty until Johan approves a deployment):
+The phone record is `fa` (`fa-<jobId>` or `fa-b<time>`). Its status (`waiting` / `sent` / `rejected`) is **set only by the server**. The phone sees it through normal sync and shows "Waiting for Assets", "In Assets" or "Refused by Assets".
 
-| Property | Meaning |
+### Request
+
+```
+POST text/plain {"action":"importFinishedItem","code":"<ASSETS_WORKSHOP_CODE>","item":{
+  "id":"fa-j1794300000002", "v":2, "sourceApp":"tmcworkshop", "sourceItemId":"fa-j1794300000002", "destinationApp":"tmcassets",
+  "at":"2026-11-14T05:00:00.000Z", "by":"Pieter",
+  "campId":"…", "campName":"10 Alfa", "placeId":"…", "placeName":"Store A",
+  "name":"Bed", "type":"bed", "qty":"1", "size":"2 m x 1 m",
+  "jobId":"j1794300000002", "jobName":"Ben Bed", "suggestedPerson":"Ben",
+  "materials":[{"type":"Square tubing 40×40","qty":"3","unit":"m"}],
+  "builtBefore":false, "photo":"https://…" }}
+```
+
+- **`by`:** the worker who sent it. Assets sets the item's **"Who has it" from `item.by`**. `suggestedPerson` (from the job name) is kept by Assets **as a note only** (Johan 06:32).
+- **`type`:** mapped from the item name (en/fr/af/ar words). The order is table, bed, tent, container; anything else is `other`.
+- **`qty`:** a decimal string with no exponent. One item carries its quantity; it is not split.
+- **Fields:** `materials`, `jobId`, `size`, `builtBefore` and `suggestedPerson` go into Assets' More details.
+- **Location:** `campId`, `campName`, `placeId`, `placeName`. A new place has `placeId:""` and `placeName` filled in (max 60), and Assets reuses a same-name place.
+- **`photo`:** **an https URL only, never a data URL**, otherwise `""`.
+  - Workshop photos are uploaded by the phone to *this* app's Drive folder (action `photo`). The `pl` record keeps `DriveFile.getUrl()`, and the item's `photo` (a photo id) is resolved to that URL.
+  - The photo is optional. The finish form reuses the job's photo; if the job has none, it shows the same Add photo button and stores the photo like job photos.
+
+### Reply and what Workshop does
+
+| Reply | Workshop status |
 | --- | --- |
-| `ASSETS_URL` | Assets web app `/exec` URL |
-| `ASSETS_CODE` | Assets import code for this action only |
-| `ASSETS_APP_ID` | Assets public `APP_ID` |
+| `{ok:true, itemId:"wsf-<id>", placeId, result:"accepted"}` | `sent` (keeps `assetsItemId`, and `placeId` from Assets) |
+| `{ok:true, …, result:"duplicate"}` (already there, e.g. a lost reply) | `sent` |
+| `{ok:false, error:"bad_request" \| "bad_qty" \| "bad_camp"}` (or another item refusal) | `rejected` (+ `rejectWhy`) |
+| `{ok:false, error:"busy_try_again"}` | stays `waiting`; the run stops |
+| `{ok:false, error:"bad_code" \| "wrong_app"}` (our settings) | stays `waiting`; the run stops |
+| network error, non-2xx, bad JSON | stays `waiting` |
 
-If any of these is empty, Workshop keeps the item `waiting` and does not mark it sent.
+Assets stores the item as `wsf-<id>`, so sending the same id again returns `duplicate` and never creates a second item.
 
-Proposed action name: `importFinishedItem` (Assets may choose another name when they agree).
+### When it sends
 
-## Request
+- On sync: the `fa` items that just came in with `waiting` are sent straight after the write.
+- Time trigger `assetsRetry` every hour (added to `TRIGGERS`, installed by `setupOnce`): it sends every `waiting` item, at most 20 per run.
+- Items already `sent` or `rejected` are never sent again. A phone resend cannot change the server-owned fields (`status`, `sentAt`, `assetsResult`, `assetsItemId`, `rejectWhy`, …); `keepAssets_` keeps them.
 
-`POST` the Assets `/exec` with `Content-Type: text/plain;charset=utf-8`.
+## Open points (TMC Assets / deploy)
 
-```json
-{
-  "action": "importFinishedItem",
-  "code": "<Assets import code>",
-  "item": {
-    "id": "stable-item-id",
-    "v": 1,
-    "sourceApp": "tmcworkshop",
-    "sourceItemId": "stable-item-id",
-    "destinationApp": "<assets-app-id>",
-    "at": "2026-11-11T17:00:00.000Z",
-    "by": "Staff display name",
-    "camp": "10 Alfa",
-    "name": "Bed",
-    "qty": "2",
-    "size": "optional size or description",
-    "jobId": "j1234567890",
-    "jobName": "Ward beds",
-    "suggestedPerson": "",
-    "materials": [],
-    "builtBefore": false
-  }
-}
-```
-
-An existing job that was already built (in use) uses the same body with `builtBefore: true`, the job id and name, the suggested person, the size and its materials:
-
-```json
-{
-  "action": "importFinishedItem",
-  "code": "<Assets import code>",
-  "item": {
-    "id": "stable-item-id",
-    "v": 1,
-    "sourceApp": "tmcworkshop",
-    "sourceItemId": "stable-item-id",
-    "destinationApp": "<assets-app-id>",
-    "at": "2026-11-11T17:00:00.000Z",
-    "by": "Staff display name",
-    "camp": "10 Alfa",
-    "name": "Bed",
-    "qty": "1",
-    "size": "2 m x 1 m",
-    "jobId": "j1794300000001",
-    "jobName": "Shaun Bed",
-    "suggestedPerson": "Shaun",
-    "materials": [
-      { "type": "Square tubing 40×40", "qty": "12", "unit": "m" },
-      { "type": "Rope 10 mm", "qty": "8", "unit": "m" }
-    ],
-    "tookStock": false,
-    "builtBefore": true
-  }
-}
-```
-
-Rules:
-
-- `item.id` and `sourceItemId` are the same stable Workshop finished-item id (the `fa` record id). A retry sends the same id.
-- `sourceApp` is always `tmcworkshop`. The receiver rejects any other value with `wrong_app` and writes nothing.
-- `destinationApp` is the configured Assets app id. The receiver rejects any other value with `wrong_app` and writes nothing.
-- `camp` is `10 Alfa`.
-- `qty` is a decimal string. Dot is the separator. No exponent. The value must be greater than 0.
-- `name` is at most 120 characters. `size` is at most 120.
-- `builtBefore` is a boolean on this same payload. A job item with a cut list is `false`. A built-before item is `true`; it **may** carry `jobId` / `jobName` (from an existing job) or have them as empty strings (added without a job). There is no second endpoint or a different item body.
-- `suggestedPerson` is a string (may be empty), at most 120 characters. It is a suggestion for who has the item; Assets decides.
-- `materials` is a list (may be empty) of `{type, qty, unit}`: `type` is the steel type or rope (stock name or free text, at most 120 characters), `qty` is a decimal string like `qty` above, `unit` is `m`, `mm` or `pcs`. For an Already built job the list is pre-filled from that job's existing Add steel / Add rope records (Johan 14 Nov 02:45). Those rows were already taken off Workshop stock when they were added, so Workshop never deducts them again, even with Take off stock ON.
-- `tookStock` (optional boolean) says whether Workshop took these metres off its own stock. Information only; Assets never changes Workshop stock.
-- Ids match `^[A-Za-z0-9_-]{4,64}$`.
-- `at` is ISO-8601 UTC. `by` is a display name for the audit line only.
-
-The body must not contain PINs, PIN hashes, session tokens, team codes, user records, permissions, stock movements, or instructions to edit anything except this finished item.
-
-## Response
-
-Always JSON.
-
-Accepted, including a retry of an item Assets already applied:
-
-```json
-{ "ok": true, "itemId": "stable-item-id", "result": "accepted" }
-```
-
-```json
-{ "ok": true, "itemId": "stable-item-id", "result": "duplicate" }
-```
-
-`duplicate` means the item is already there. It is success for Workshop. It must not add a second item.
-
-Refused. Assets has written nothing for this item:
-
-```json
-{ "ok": false, "error": "bad_code" }
-```
-
-`error` is one of `bad_code`, `wrong_app`, `bad_request`, `bad_qty`, `busy_try_again`.
-
-## Sender status (Workshop)
-
-| Situation | Workshop status | Item in Assets |
-| --- | --- | --- |
-| On the phone list, or the link is not configured, or the network failed | `waiting` (Waiting for Assets) for both job items and built-before items. Built-before items also show a "Built before" mark. | Not sent |
-| Assets refused | `rejected` | Not sent |
-| Assets returned `accepted` or `duplicate` | `sent` | Received once |
-
-Workshop must not show the item as already in Assets while the status is `waiting` or `rejected`.
-
-## What Assets would do (for agreement)
-
-Inside Assets, in one lock, all or nothing:
-
-1. If `item.id` was already applied, return `duplicate` and do not add it again.
-2. Check `code`, `sourceApp`, `destinationApp`, `qty`, and the id shape.
-3. Create the finished item once, with camp **10 Alfa**. A built-before item is stored the same way as a job item. The `builtBefore` flag and empty job fields are kept on the record; Assets does not treat it as a different kind of transfer.
-4. Assets staff later assign a **tent** and a **person**. Workshop does not send tent or person. This is the same for job items and built-before items.
-5. Return `accepted`.
-
-## Open until Assets and Johan agree
-
-- The exact action name and property names on the Assets script.
-- When Workshop actually posts (Admin tap, or automatic after "Mark ready" / after adding a built-before item).
-
-Settled on the Workshop side (Johan 11 Nov 2026, and 14 Nov 2026 02:27–02:29): built-before items use this same payload with `builtBefore: true`. Items from existing finished Build jobs keep the job id and name and add `suggestedPerson`, `size` and `materials`. They are not a separate contract.
-
-Until that agreement and Johan's yes, do not change live `Code.gs` and do not connect this list.
+1. Fill `ASSETS_WORKSHOP_CODE` and `ASSETS_LOCATIONS_READ` at deploy, then run `setupOnce` to add the hourly trigger. Deploy only after phones are on v1.6.0, and only with Johan's yes.
+2. Photo links are Drive file URLs owned by the Workshop script. Assets can only show them if the file is shared (e.g. anyone with the link), and Workshop's `photoCleanup` trashes photos after 60 days. Assets should copy the image if it must keep it.
+3. If Assets renames a field, change it in `assetsItem_()` only.
+4. The `type` word list is a guess from item names; Assets can map `other` itself.

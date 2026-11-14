@@ -29,6 +29,16 @@ const ctx={console,JSON,Date,Number,String,Object,Math,
  ScriptApp:{getProjectTriggers:()=>trig.slice(),deleteTrigger:t=>{trig=trig.filter(x=>x!==t)},newTrigger:fn=>{const b={timeBased:()=>b,everyDays:()=>b,atHour:()=>b,nearMinute:()=>b,everyHours:()=>b,create:()=>{const t={getHandlerFunction:()=>fn};trig.push(t);return t}};return b}},
  LockService:{getScriptLock:()=>({tryLock:()=>true,waitLock(){},releaseLock(){}})},
  ContentService:{MimeType:{JSON:'json'},createTextOutput:s=>({s,setMimeType(){return this}})}};
+/* v1.6.0: fake TMC Assets behind UrlFetchApp (codes 'wsc' items, 'rdc' locations); /_assets?mode=ok|down|busy, /_assets?locs=JSON */
+const FA={mode:'ok',items:{},calls:[],locs:[{id:'c-alfa',name:'10 Alfa',camp:'10 Alfa',places:[{id:'p-store',name:'Store A'},{id:'p-yard',name:'yard'}]},{id:'c-bravo',name:'Bravo',camp:'Bravo',places:[]}]};
+ctx.UrlFetchApp={fetch:(url,opt)=>{const b=JSON.parse(opt.payload);FA.calls.push(b.action);const R=(o,c)=>({getResponseCode:()=>c||200,getContentText:()=>JSON.stringify(o)});
+ if(FA.mode==='down')throw new Error('Address unavailable');if(FA.mode==='busy')return R({ok:false,error:'busy_try_again'});
+ if(b.action==='listLocations')return R(b.code==='rdc'?{ok:true,locations:FA.locs}:{ok:false,error:'bad_code'});
+ if(b.action!=='importFinishedItem')return R({ok:false,error:'bad_request'});if(b.code!=='wsc')return R({ok:false,error:'bad_code'});
+ const it=b.item||{};if(it.destinationApp!=='tmcassets')return R({ok:false,error:'wrong_app'});const camp=FA.locs.find(c=>c.id===it.campId);if(!camp)return R({ok:false,error:'bad_camp'});
+ if(FA.items[it.id])return R({ok:true,itemId:'wsf-'+it.id,placeId:FA.items[it.id].placeId,result:'duplicate'});
+ let pid=it.placeId||'';if(!pid&&it.placeName){const m=camp.places.find(p=>p.name.toLowerCase()===String(it.placeName).toLowerCase());pid=m?m.id:'p-new-'+Object.keys(FA.items).length}
+ FA.items[it.id]={item:it,placeId:pid};return R({ok:true,itemId:'wsf-'+it.id,placeId:pid,result:'accepted'})}};
 vm.createContext(ctx);const SRC=fs.readFileSync(process.env.GAS_FILE||path.join(__dirname,'..','sync','Code.gs'),'utf8');vm.runInContext(SRC,ctx);
 let log=[];
 http.createServer((q,res)=>{let b='';q.on('data',d=>b+=d);q.on('end',()=>{
@@ -39,6 +49,7 @@ http.createServer((q,res)=>{let b='';q.on('data',d=>b+=d);q.on('end',()=>{
  // test-only hooks: run setupOnce (optionally with a code / triggers swapped in), set a Script Property, read state
  if(q.url.startsWith('/_setup')){const u=new URL(q.url,'http://x');if(u.searchParams.has('code'))vm.runInContext('TEAM_CODE_SETUP='+JSON.stringify(u.searchParams.get('code')),ctx);if(u.searchParams.has('trig'))vm.runInContext('TRIGGERS='+u.searchParams.get('trig'),ctx);
   let o;try{o=JSON.parse(ctx.setupOnce())}catch(e){o={err:String(e)}}res.writeHead(200,H);return res.end(JSON.stringify(o))}
+ if(q.url.startsWith('/_assets')){const u=new URL(q.url,'http://x');if(u.searchParams.has('mode'))FA.mode=u.searchParams.get('mode');if(u.searchParams.has('locs'))FA.locs=JSON.parse(u.searchParams.get('locs'));if(u.searchParams.has('retry'))ctx.assetsRetry();res.writeHead(200,H);return res.end(JSON.stringify(FA))}
  if(q.url.startsWith('/_prop')){const u=new URL(q.url,'http://x');for(const [k,v] of u.searchParams){if(v==='')delete props[k];else props[k]=v}res.writeHead(200,H);return res.end('{}')}
  if(q.url.startsWith('/_state')){res.writeHead(200,H);return res.end(JSON.stringify({name:ssName,triggers:trig.map(t=>t.getHandlerFunction()),props:Object.keys(props).filter(k=>k.indexOf('TOK_')&&k.indexOf('FAIL_')),teamCode:props.TEAM_CODE||null,tabs:Object.keys(sheets),src:/__TMC_TEAM_CODE__/.test(SRC)}))}
  if(q.url.startsWith('/_drive')){res.writeHead(200,H);return res.end(JSON.stringify({folders:Object.values(drive.folders).map(d=>({id:d.id,name:d.name})),files:Object.values(drive.files).map(f=>({id:f.id,name:f.name,folder:f.folder,trashed:f.trashed,size:f.bytes.length})),folderProp:props.PHOTO_FOLDER_ID||null}))}

@@ -34,6 +34,11 @@ try:
     ok(info.get('duplicate') and info.get('altered') and info.get('badQty'), 'unit: identical retry is duplicate; altered payload is refused %s' % info)
     ok(info.get('recover') and info.get('clash'), 'unit: partial write resumes the same plan; a different body does not %s' % info)
     ok(info.get('ambiguous') and info.get('binding') and info.get('unit'), 'unit: ambiguous name, source binding, unit change %s' % info)
+    au = subprocess.run(['node', os.path.join(HERE, 'assets_unit.js')], capture_output=True, text=True, env=dict(os.environ, GAS_FILE=os.path.join(APP, 'sync', 'Code.gs')))
+    ainfo = json.loads(au.stdout or '{}')
+    ok(au.returncode == 0 and len(ainfo) >= 28, 'Assets sender unit (mocked UrlFetch) ran: %d checks' % len(ainfo))
+    for k, v in sorted(ainfo.items()):
+        ok(v, 'Assets unit: %s' % k)
     ok(post(WP, xfer('tmcworkshop', code='nope')).get('error') == 'bad_code' and not dump(WP)['recs'], 'wrong import code writes nothing')
     ok(post(WP, xfer('tmcworkshop', code='team-not-import')).get('error') == 'bad_code', 'team code cannot import')
     ok(post(WP, {'action': 'sync', 'code': 'test-import-workshop', 'device': 't', 'since': 0, 'changes': [{'kind': 'j', 'id': 'nope', 'u': 1, 'data': {'id': 'nope'}}]}).get('error') == 'bad_code', 'import code cannot sync')

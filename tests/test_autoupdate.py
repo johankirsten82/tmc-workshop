@@ -24,7 +24,7 @@ TMP=tempfile.mkdtemp(prefix='au-');GP,WP=free(),free();d=os.path.join(TMP,'app')
 shutil.copytree(APP,d,ignore=shutil.ignore_patterns('tests','shots*','.git','*.zip','patches','*.bak*'))
 def publish(ver):   # "publish" a new version locally: bump VER, regenerate sw.js (new cache name)
     ip=os.path.join(d,'index.html');s=open(ip,encoding='utf-8').read();C=json.loads(re.search(r'/\*CONFIG\*/(.*?)/\*END\*/',s,re.S).group(1))
-    C.update(SYNC_URL='http://127.0.0.1:%d/exec'%GP,SYNC_CODE='',VER=ver)
+    C.update(SYNC_URL='http://127.0.0.1:%d/exec'%GP,SYNC_CODE='',VER=ver,VERSION='1.%d.0'%ver)
     s=re.sub(r'/\*CONFIG\*/.*?/\*END\*/','/*CONFIG*/'+json.dumps(C,ensure_ascii=False,indent=1)+'/*END*/',s,flags=re.S);open(ip,'w',encoding='utf-8').write(s)
     apply_config.main(d);return C
 C=publish(1);CP=C.get('CACHE_PREFIX') or C['APP_ID']
@@ -71,7 +71,7 @@ try:
     pg.evaluate("window.__old=1")
     pg.wait_for_function("!window.__old&&!!document.querySelector('header')&&!document.getElementById('updGo')",timeout=20000);pg.wait_for_timeout(1500)
     k=pg.evaluate("caches.keys()");ctl=pg.evaluate("navigator.serviceWorker.controller&&navigator.serviceWorker.controller.state")
-    ok(CP+'-v2' in k and CP+'-v1' not in k and pg.locator('#updGo').count()==0 and pg.evaluate("!TMC.updLock()"),'updated automatically: new worker active (%s), cache %s, old cache gone, screen gone'%(ctl,k))
+    ok(CP+'-v1.2.0' in k and CP+'-v1.1.0' not in k and pg.locator('#updGo').count()==0 and pg.evaluate("!TMC.updLock()"),'updated automatically: new worker active (%s), cache %s, old cache gone, screen gone'%(ctl,k))
     ok(pg.evaluate("CONFIG.VER")==2 and pg.evaluate("!!(TMC.me()&&TMC.me().admin)"),'after update: version 2, still signed in as Admin')
     ok(has(pg,'q1') and pg.evaluate("TMC.pending()")>=1,'queued unsynced record still on the phone after the reload')
     ok(not has(pg,'q2'),'the blocked save did not slip in')
@@ -86,7 +86,7 @@ try:
     ok('Mise à jour' in pg.inner_text('#updGo'),'back to the front: Updating screen in the phone\'s language (FR)')
     pg.screenshot(path=os.path.join(SHOTS,'autoupdate-fr.png'))
     pg.wait_for_function("CONFIG.VER===3&&!document.getElementById('updGo')",timeout=20000);pg.wait_for_selector('header')
-    ok(pg.evaluate("caches.keys()")==[CP+'-v3'] or CP+'-v3' in pg.evaluate("caches.keys()"),'back to the front: updated itself to version 3')
+    ok(pg.evaluate("caches.keys()")==[CP+'-v1.3.0'] or CP+'-v1.3.0' in pg.evaluate("caches.keys()"),'back to the front: updated itself to version 3')
     pg.evaluate("TMC.L.set('lang','en')");SLOW['sw']=0
     # 4. offline open: no lock, app works
     publish(4);x.set_offline(True);SLOW['down']=1;pg.reload();pg.wait_for_selector('header',timeout=15000);pg.wait_for_timeout(2500)

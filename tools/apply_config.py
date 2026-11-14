@@ -18,6 +18,13 @@ def cache_prefix(C):
     assert re.match(CP_RE,cp) and 2<=len(cp)<=30,'CACHE_PREFIX: lowercase letters/digits, single hyphens inside'
     assert not re.search(r'-v\d+(-|$)',cp),'CACHE_PREFIX must not contain -v<number>'
     return cp
+def ver_(C):
+    """cache version: CONFIG VERSION (TMC version standard, e.g. 1.6.0) if set, else the old whole-number VER"""
+    v=str(C.get('VERSION') or '').strip()
+    if v:
+        assert re.match(r'^\d+\.\d+\.\d+$',v),'VERSION must be MAJOR.MINOR.PATCH'
+        return v
+    return str(int(C['VER']))
 def cfg(root=ROOT):
     s=open(os.path.join(root,'index.html'),encoding='utf-8').read()
     return json.loads(re.search(r'/\*CONFIG\*/(.*?)/\*END\*/',s,re.S).group(1))
@@ -32,10 +39,10 @@ def main(root=ROOT):
       "background_color":C['BG'],"theme_color":C['COLOR'],"icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},
       {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"},{"src":"icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]},
       open(os.path.join(root,'manifest.json'),'w'),indent=1,ensure_ascii=False)
-    sw=open(src(root,'sw.template.js')).read().replace('__APP__',CP).replace('__VER__',str(int(C['VER']))).replace('__QR__',',"icons/qr.png"' if C.get('SHARE_URL') else '')
+    sw=open(src(root,'sw.template.js')).read().replace('__APP__',CP).replace('__VER__',ver_(C)).replace('__QR__',',"icons/qr.png"' if C.get('SHARE_URL') else '')
     open(os.path.join(root,'sw.js'),'w').write(sw)
     icons(root,C)
-    print('applied',A,'cache %s-v%s'%(CP,C['VER']),'in',root)
+    print('applied',A,'cache %s-v%s'%(CP,ver_(C)),'in',root)
 def icons(root,C):
     from PIL import Image,ImageDraw,ImageFont
     d=os.path.join(root,'icons');os.makedirs(d,exist_ok=True)

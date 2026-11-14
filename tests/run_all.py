@@ -34,7 +34,7 @@ def build(sub,app_id,port,code,ver=1,cp=None):
     if not os.path.exists(d):shutil.copytree(APP,d,ignore=shutil.ignore_patterns('tests','*.zip','.git'))
     ip=os.path.join(d,'index.html');s=open(ip,encoding='utf-8').read()
     C=json.loads(re.search(r'/\*CONFIG\*/(.*?)/\*END\*/',s,re.S).group(1))
-    C.update(APP_ID=app_id,VER=ver,SYNC_URL='http://127.0.0.1:%d/exec'%port,SYNC_CODE=code,SHARE_URL='https://example.org/'+sub+'/',NAME='Test '+app_id,SHORT='T'+app_id)
+    C.update(APP_ID=app_id,VER=ver,VERSION='1.%d.0'%ver,SYNC_URL='http://127.0.0.1:%d/exec'%port,SYNC_CODE=code,SHARE_URL='https://example.org/'+sub+'/',NAME='Test '+app_id,SHORT='T'+app_id)
     if cp:C['CACHE_PREFIX']=cp
     else:C.pop('CACHE_PREFIX',None)
     s=re.sub(r'/\*CONFIG\*/.*?/\*END\*/','/*CONFIG*/'+json.dumps(C,ensure_ascii=False,indent=1)+'/*END*/',s,flags=re.S);open(ip,'w',encoding='utf-8').write(s)
@@ -316,7 +316,7 @@ try:
      a.evaluate("TMC.checkUpdate()")   # VER 11: no banner tap — the app updates itself (tests/test_autoupdate.py has the details)
      a.wait_for_function("window.CONFIG&&CONFIG.VER===2",timeout=20000);a.wait_for_selector('header')
      ok(a.evaluate("CONFIG.VER")==2 and home(a) and isadm(a),'new version → updated itself: version 2, still signed in as Admin')
-     ok(a.evaluate("caches.keys()")==['testa-v2'] or set(a.evaluate("caches.keys()"))>={'testa-v2'} and 'testa-v1' not in a.evaluate("caches.keys()"),'old cache testa-v1 removed, testa-v2 kept')
+     ok(a.evaluate("caches.keys()")==['testa-v1.2.0'] or set(a.evaluate("caches.keys()"))>={'testa-v1.2.0'} and 'testa-v1.1.0' not in a.evaluate("caches.keys()"),'old cache testa-v1.1.0 removed, testa-v1.2.0 kept (v1.6.0: cache = VERSION)')
 
      sec('9. EN / FR / AR / AF')
      x=newctx(br);g=openp(x,A,'lang')
@@ -341,7 +341,7 @@ try:
      ok('B only note' not in json.dumps(dump(P1)) and 'B only note' in json.dumps(dump(P2)),'B data goes only to B\'s Sheet')
      ks=b.evaluate("Object.keys(localStorage)");ok(all(k.startswith('testa_') or k.startswith('testb_') for k in ks),'every storage key is namespaced (%d keys)'%len(ks))
      ok('B only note' not in b.evaluate("localStorage.testa_recs||''"),'B data not in A\'s storage')
-     ck=b.evaluate("caches.keys()");ok('testa-v2' in ck and any(c.startswith('test-b-v') for c in ck),'separate caches (B uses hyphen CACHE_PREFIX test-b): %s'%ck)
+     ck=b.evaluate("caches.keys()");ok('testa-v1.2.0' in ck and any(c.startswith('test-b-v') for c in ck),'separate caches (B uses hyphen CACHE_PREFIX test-b): %s'%ck)
      regs=b.evaluate("navigator.serviceWorker.getRegistrations().then(r=>r.map(x=>x.scope))");ok(len(regs)==2 and all(('/appa/' in s) or ('/appb/' in s) for s in regs),'separate service workers per folder')
      ok(json.loads(open(os.path.join(TMP,'appa','manifest.json')).read())['id']!=json.loads(open(os.path.join(TMP,'appb','manifest.json')).read())['id'],'different manifest ids')
      # logout in A leaves B signed in
@@ -352,7 +352,7 @@ try:
      b.evaluate("TMC.wipeThisApp()");b.wait_for_timeout(800)
      ok(b.evaluate("Object.keys(localStorage).filter(k=>k.indexOf('testb_')===0).length")==0,'wipe B: all B keys gone')
      ok(a.evaluate("Object.keys(localStorage).filter(k=>k.indexOf('testa_')===0).length")==na,'wipe B: A keys untouched (%d)'%na)
-     ck=a.evaluate("caches.keys()");ok('testa-v2' in ck and not any(c.startswith('test-b-') for c in ck),'wipe B: only B caches deleted %s'%ck)
+     ck=a.evaluate("caches.keys()");ok('testa-v1.2.0' in ck and not any(c.startswith('test-b-') for c in ck),'wipe B: only B caches deleted %s'%ck)
      regs=a.evaluate("navigator.serviceWorker.getRegistrations().then(r=>r.map(x=>x.scope))");ok(len(regs)==1 and '/appa/' in regs[0],'wipe B: only B service worker removed')
      a.reload();a.wait_for_selector('header');ok(home(a) and 'offline note' in json.dumps(a.evaluate("TMC.all('x')")),'A still signed in with its data after B was wiped')
      br.close()
@@ -1096,6 +1096,15 @@ try:
         if line.startswith('  PASS '):R['pass']+=1
         elif line.startswith('  FAIL '):R['fail']+=1;ERR.append(line)
       ok(vv.returncode==0 and 'V4 JOBS:' in (vv.stdout or ''),'v4 jobs script finished clean (exit %d)'%vv.returncode)
+    v16=os.path.join(APP,'tests','test_v16.py')   # v1.6.0: worker finish, location, photo, version label, Assets sender
+    if os.path.exists(v16):
+      w6=subprocess.run([sys.executable,v16,APP],capture_output=True,text=True,timeout=300)
+      print(w6.stdout,end='',flush=True)
+      if w6.stderr:print(w6.stderr[-500:],end='',flush=True)
+      for line in (w6.stdout or '').splitlines():
+        if line.startswith('  PASS '):R['pass']+=1
+        elif line.startswith('  FAIL '):R['fail']+=1;ERR.append(line)
+      ok(w6.returncode==0 and 'V1.6.0:' in (w6.stdout or ''),'v1.6.0 script finished clean (exit %d)'%w6.returncode)
   else:skip('no tests/test_workshop.py')
   sec('11. Console errors')
   ok(not ERR,'no console errors %s'%ERR[:5])

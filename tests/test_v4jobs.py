@@ -59,13 +59,16 @@ V4JOBS=[{'id':'j1794300000001','name':'Shaun Bed'},{'id':'j1794300000002','name'
         {'id':'j1794300000004','name':'Elton Bed'},{'id':'j1794300000005','name':'Johan Side Table'},{'id':'j1794300000006','name':'Cliff Bed'}]
 for i,j in enumerate(V4JOBS):j.update(type='build',by='JA Kirsten',at='2026-11-11T%02d:00:00.000Z'%(8+i),example=0)
 SPLIT={'Shaun Bed':('Shaun','Bed'),'Ben Bed':('Ben','Bed'),'Alex Bed':('Alex','Bed'),'Elton Bed':('Elton','Bed'),'Johan Side Table':('Johan','Side Table'),'Cliff Bed':('Cliff','Bed')}
-KEYS=["wjInUse","wjInUseH","wjIuMats","wjIuType","wjIuTypeH","wjIuAmt","wjIuAdd","wjTake","wjTakeOff","wjTakeOn","wjSizeEx","wjNeedIu","wjNotStock","wjIuMatsL","wjIuTook","wjPerson","wjPersonH","wjRdItem","wjSaveReady","wjEditFa","wjNoPerson","wjReadyH"]
+KEYS=["wjInUse","wjInUseH","wjIuMats","wjIuType","wjIuTypeH","wjIuAmt","wjIuAdd","wjDoneH","wjLoc","wjLocChoose","wjLocNone","wjNeedLoc","wjPlace","wjPlaceH","wjIuPhoto","wjJobPhoto","wjSizeEx","wjNeedIu","wjNotStock","wjIuMatsL","wjIuTook","wjPerson","wjPersonH","wjRdItem","wjSaveReady","wjEditFa","wjNoPerson","wjReadyH"]
 CHROME='/usr/bin/google-chrome' if os.path.exists('/usr/bin/google-chrome') else None
 def jobs(pg):return pg.evaluate("()=>JSON.stringify(TMC.all('j').slice().sort((a,b)=>a.id<b.id?-1:1))")
 def ks(pg):return pg.evaluate("()=>JSON.stringify(TMC.all('k').slice().sort((a,b)=>a.id<b.id?-1:1))")
 def bal(pg,mat,d):return pg.evaluate("([m,d])=>TMC.wBal(m,d).len",[mat,d])
 def open_job(pg,jid):
     pg.evaluate("id=>{const w=TMC.ws();w.screen='job';w.jobId=id;TMC.render()}",jid);pg.wait_for_timeout(200)
+LOCS=[{'id':'c-alfa','name':'10 Alfa','camp':'10 Alfa','places':[{'id':'p-store','name':'Store A'}]},{'id':'c-bravo','name':'Bravo','camp':'Bravo','places':[]}]
+def pickloc(pg,camp='10 Alfa'):
+    pg.click('#wjLocBtn');pg.wait_for_timeout(120);pg.locator('.wjLocPick',has_text=camp).click();pg.wait_for_timeout(120)
 def amt(pg,row,digits):
     pg.click('.wjIuCell[data-r="%d"]'%row)
     for d in digits:pg.click('[data-iupad="%s"]'%d)
@@ -81,6 +84,7 @@ try:
       TMC.put('k','kin-sq',{id:'kin-sq',ref:'',dir:'in',mat:'steel',desc:'Square tubing 40×40',qty:0,len:18,unit:'m',qThou:0,lThou:18000,at:at,by:'JA Kirsten',jobId:'',sourceApp:'admin',note:''});
       TMC.put('k','kin-rope',{id:'kin-rope',ref:'',dir:'in',mat:'rope',desc:'Rope 10 mm',qty:0,len:20,unit:'m',qThou:0,lThou:20000,at:at,by:'JA Kirsten',jobId:'',sourceApp:'admin',note:''});
       jobs.forEach(j=>TMC.put('j',j.id,j))}""",V4JOBS)
+    pg.evaluate("l=>TMC.L.set('assetsLoc',JSON.stringify({at:Date.now(),locations:l}))",LOCS)
     pg.wait_for_timeout(200)
     J0=jobs(pg);K0=ks(pg)
     ok(len(json.loads(J0))==6 and all(set(j.keys())>={'id','name','type','by','at'} and 'item' not in j for j in json.loads(J0)),'6 v4-shaped Build jobs loaded (no item/units fields)')
@@ -89,43 +93,36 @@ try:
     ok(all(j['name'] in lt for j in V4JOBS),'v5 jobs list shows all 6 v4 jobs unchanged')
     sp=pg.evaluate("jobs=>jobs.map(j=>TMC.wSplitJob(j))",V4JOBS)
     ok(all((s['person'],s['item'])==SPLIT[j['name']] for s,j in zip(sp,V4JOBS)),'suggested person / item from the job name %s'%sp)
-    # Shaun Bed: Already built, square tubing 12 m + rope 8 m, size 2 m x 1 m, Take off stock OFF
+    # Shaun Bed: Already built, square tubing 12 m + rope 8 m, size 2 m x 1 m, Admin old job (v1.6.0: no stock switch, nothing comes off stock)
     open_job(pg,'j1794300000001')
     ok(pg.locator('#wjInUse').count()==1 and pg.locator('#wjMarkReady').count()==0,'v4 job (no cut list) shows the Already built button')
     pg.click('#wjInUse');pg.wait_for_timeout(200)
     ok(pg.locator('#wjInUseBox').count()==1 and pg.input_value('#wjIu_person')=='Shaun' and pg.input_value('#wjIu_item')=='Bed','in-use form prefilled: Bed / Shaun')
-    ok(pg.get_attribute('#wjIuTake','aria-checked')=='false','Take off stock is OFF by default')
+    ok(pg.locator('#wjIuTake').count()==0 and pg.locator('#wjInUseBox [role=switch]').count()==0,'Admin old-job form has no Take off stock switch')
     pg.fill('.wjIuType[data-r="0"]','Square tubing 40×40');amt(pg,0,'12')
     pg.click('#wjIuAdd');pg.wait_for_timeout(150)
     pg.fill('.wjIuType[data-r="1"]','Rope 10 mm');amt(pg,1,'8')
-    pg.fill('#wjIu_size','2 m x 1 m')
+    pg.fill('#wjIu_size','2 m x 1 m');pickloc(pg)
     pg.click('#wjSendIu');pg.wait_for_timeout(400)
     ok(pg.locator('#wjJob').count()==1,'Send to Assets saves and returns to the job')
-    ok(ks(pg)==K0 and bal(pg,'steel','Square tubing 40×40')==18 and bal(pg,'rope','Rope 10 mm')==20,'toggle OFF: no stock record added or changed (18 m / 20 m)')
+    ok(ks(pg)==K0 and bal(pg,'steel','Square tubing 40×40')==18 and bal(pg,'rope','Rope 10 mm')==20,'Admin old job: no stock record added or changed (18 m / 20 m)')
     fa=pg.evaluate("()=>TMC.all('fa').find(f=>f.jobId==='j1794300000001')")
-    ok(fa and fa['builtBefore']==1 and fa['jobName']=='Shaun Bed' and fa['name']=='Bed' and fa['suggestedPerson']=='Shaun' and fa['size']=='2 m x 1 m' and fa['tookStock']==0 and fa['status']=='waiting','queued item: built before, job id/name, Bed, Shaun, size %s'%fa)
+    ok(fa and fa['builtBefore']==1 and fa['jobName']=='Shaun Bed' and fa['name']=='Bed' and fa['suggestedPerson']=='Shaun' and fa['size']=='2 m x 1 m' and fa['tookStock']==0 and fa['status']=='waiting' and fa['campId']=='c-alfa' and fa['campName']=='10 Alfa' and fa['placeId']=='' and fa['by']=='JA Kirsten','queued item: built before, location, job id/name, Bed, Shaun, size %s'%fa)
     ok(fa and [(m['type'],m['qty'],m['unit']) for m in fa['materials']]==[('Square tubing 40×40',12,'m'),('Rope 10 mm',8,'m')],'queued item carries materials %s'%(fa or {}).get('materials'))
-    # Johan Side Table: toggle ON, 3 m square tubing + 500 mm rope
+    # Johan Side Table: Admin old job with materials and an edited person -> still nothing off stock
     open_job(pg,'j1794300000005');pg.click('#wjInUse');pg.wait_for_timeout(200)
     ok(pg.input_value('#wjIu_person')=='Johan' and pg.input_value('#wjIu_item')=='Side Table','Johan Side Table -> Johan / Side Table')
     pg.fill('.wjIuType[data-r="0"]','Square tubing 40×40');amt(pg,0,'3')
     pg.click('#wjIuAdd');pg.wait_for_timeout(150);pg.fill('.wjIuType[data-r="1"]','Rope 10 mm');amt(pg,1,'500');pg.click('[data-iuu="1"][data-u="mm"]');pg.wait_for_timeout(150)
     pg.fill('#wjIu_person','Johan K')
-    pg.click('#wjIuTake');pg.wait_for_timeout(150)
-    ok(pg.get_attribute('#wjIuTake','aria-checked')=='true' and pg.input_value('#wjIu_person')=='Johan K','toggle ON, typed values kept, person editable')
-    pg.click('#wjSendIu');pg.wait_for_timeout(400)
-    ok(abs(bal(pg,'steel','Square tubing 40×40')-15)<1e-9 and abs(bal(pg,'rope','Rope 10 mm')-19.5)<1e-9,'toggle ON: 3 m steel and 0.5 m rope come off stock (15 m / 19.5 m)')
+    pg.click('#wjSendIu');pg.wait_for_timeout(300)
+    ok(pg.locator('#wjInUseBox').count()==1 and pg.inner_text('#wjErr').strip()!='' and not pg.evaluate("()=>TMC.all('fa').some(f=>f.jobId==='j1794300000005')"),'no location chosen: save refused, form kept %s'%pg.inner_text('#wjErr'))
+    ok(pg.input_value('#wjIu_person')=='Johan K','typed values kept after the refusal')
+    pickloc(pg,'Bravo');pg.click('#wjSendIu');pg.wait_for_timeout(400)
+    ok(ks(pg)==K0 and bal(pg,'steel','Square tubing 40×40')==18 and bal(pg,'rope','Rope 10 mm')==20,'Admin old job with materials: nothing comes off stock')
     fa2=pg.evaluate("()=>TMC.all('fa').find(f=>f.jobId==='j1794300000005')")
-    ok(fa2 and fa2['tookStock']==1 and fa2['suggestedPerson']=='Johan K' and fa2['builtBefore']==1,'toggle ON item: tookStock, edited person %s'%fa2)
-    outs=pg.evaluate("()=>TMC.all('k').filter(k=>k.faId==='fa-j1794300000005').map(k=>[k.dir,k.desc,k.lThou,k.jobId])")
-    ok(sorted(outs)==sorted([['out','Square tubing 40×40',3000,'j1794300000005'],['out','Rope 10 mm',500,'j1794300000005']]),'stock out records linked to the job %s'%outs)
-    # toggle ON with material not in stock -> refused, nothing written
-    K1=ks(pg);open_job(pg,'j1794300000002');pg.click('#wjInUse');pg.wait_for_timeout(200)
-    pg.fill('.wjIuType[data-r="0"]','Flat bar 30 mm');amt(pg,0,'2');pg.click('#wjIuTake');pg.wait_for_timeout(100);pg.click('#wjSendIu');pg.wait_for_timeout(300)
-    ok(pg.locator('#wjInUseBox').count()==1 and 'Flat bar 30 mm' in pg.inner_text('#wjErr') and ks(pg)==K1 and not pg.evaluate("()=>TMC.all('fa').some(f=>f.jobId==='j1794300000002')"),'toggle ON with material not in stock: refused, form kept, nothing saved')
-    # too much -> refused
-    pg.fill('.wjIuType[data-r="0"]','Square tubing 40×40');pg.click('.wjIuCell[data-r="0"]');pg.click('[data-iupad="bk"]');amt(pg,0,'99');pg.click('#wjSendIu');pg.wait_for_timeout(300)
-    ok(pg.locator('#wjInUseBox').count()==1 and ks(pg)==K1,'toggle ON with more than on hand: refused, no stock change')
+    ok(fa2 and fa2['tookStock']==0 and fa2['suggestedPerson']=='Johan K' and fa2['builtBefore']==1 and fa2['campName']=='Bravo','old-job item: no stock taken, edited person, camp Bravo %s'%fa2)
+    ok(not pg.evaluate("()=>TMC.all('k').some(k=>k.faId==='fa-j1794300000005')"),'no stock out records for an old job')
     pg.click('#view .navBack');pg.wait_for_timeout(200)
     if pg.locator('#navAsk').count():pg.click('#navYes');pg.wait_for_timeout(200)
     # job records never changed
@@ -149,17 +146,15 @@ try:
     open_job(pg,'j1794300000004');pg.click('#wjInUse');pg.wait_for_timeout(200)
     rows=pg.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,r.amt,r.unit,!!r.pre])")
     ok(rows==[['Rope 10 mm','2','m',True]] and pg.locator('.wjIuPre').count()==1,'Elton Bed: row pre-filled from its v4 Add rope record %s'%rows)
-    pg.click('#wjSendIu');pg.wait_for_timeout(400)
-    ok(ks(pg)==K2,'pre-filled rows with the switch OFF: no stock change')
-    # Cliff Bed: pre-filled steel 6 m + rope 4 m, Admin adds 1 m, switch ON -> only the new 1 m comes off
+    pickloc(pg);pg.click('#wjSendIu');pg.wait_for_timeout(400)
+    ok(ks(pg)==K2,'Admin old job with pre-filled rows: no stock change')
+    # Cliff Bed: pre-filled steel 6 m + rope 4 m, Admin adds 1 m on an old job -> nothing comes off (workers: tests/test_v16.py)
     open_job(pg,'j1794300000006');pg.click('#wjInUse');pg.wait_for_timeout(200)
     rows=pg.evaluate("()=>TMC.ws().iu.rows.map(r=>[r.type,r.amt,r.unit,!!r.pre])")
     ok(rows==[['Square tubing 40×40','6','m',True],['Rope 10 mm','4','m',True]],'Cliff Bed: steel and rope rows pre-filled from v4 records (type, amount, unit) %s'%rows)
     pg.click('#wjIuAdd');pg.wait_for_timeout(150);pg.fill('.wjIuType[data-r="2"]','Square tubing 40×40');amt(pg,2,'1')
-    pg.click('#wjIuTake');pg.wait_for_timeout(150);pg.click('#wjSendIu');pg.wait_for_timeout(400)
-    ok(abs(bal(pg,'steel','Square tubing 40×40')-(s0-1))<1e-9 and abs(bal(pg,'rope','Rope 10 mm')-r0)<1e-9,'switch ON: only the added 1 m is taken; pre-filled 6 m steel / 4 m rope not taken again (%s→%s, rope %s→%s)'%(s0,bal(pg,'steel','Square tubing 40×40'),r0,bal(pg,'rope','Rope 10 mm')))
-    new=[k for k in json.loads(ks(pg)) if k['id'] not in {x['id'] for x in json.loads(K2)}]
-    ok(len(new)==1 and new[0]['lThou']==1000,'exactly one new stock out record (the added row) %s'%[(k['desc'],k['lThou']) for k in new])
+    pickloc(pg);pg.click('#wjSendIu');pg.wait_for_timeout(400)
+    ok(abs(bal(pg,'steel','Square tubing 40×40')-s0)<1e-9 and abs(bal(pg,'rope','Rope 10 mm')-r0)<1e-9 and ks(pg)==K2,'Admin old job: pre-filled and added rows never come off stock')
     fa3=pg.evaluate("()=>TMC.all('fa').find(f=>f.jobId==='j1794300000006')")
     ok(fa3 and [(m['type'],m['qty'],m['unit'],m.get('jobRecord','')) for m in fa3['materials']]==[('Square tubing 40×40',6,'m','m1794300000101'),('Rope 10 mm',4,'m','m1794300000102'),('Square tubing 40×40',1,'m','')] and fa3['suggestedPerson']=='Cliff','queued item carries pre-filled + added materials %s'%(fa3 or {}).get('materials'))
     oldk=[k for k in json.loads(ks(pg)) if k['id'] in {x['id'] for x in json.loads(K2)}]

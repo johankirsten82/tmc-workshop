@@ -1,3 +1,13 @@
+# TMC Workshop v1.6.0 (draft, not published)
+
+- **Workers:** a Build job shows ONE button, "Job finished: send to Assets". `by` is the worker. Added materials always come off stock; rows pre-filled from the v4 steel/rope records are never deducted twice. Not in stock, or too much, is refused.
+- **Admin:** keeps its buttons. "Already built (in use)" is the old-job path: nothing comes off stock and there is no switch.
+- **Location (required):** a camp list (A–Z) plus an optional Place (A–Z, max 60, a same name reuses the existing place). It is shown on the worker form, the Already built form, Add item built before and Edit. The list comes from TMC Assets through our server action `assetsLocations` and is stored in `tmcworkshop_assetsLoc`. With no list, saving is blocked.
+- **Photo (optional):** the job photo is reused; if there is none, the Add photo button stores it like job photos.
+- **Version label:** `v1.6.0` (app version only) under the app name (10px, #333333; CONFIG `VERSION`; `BASE_VERSION` kept, not shown). The cache is `tmcworkshop-v1.6.0`, and `tools/apply_config.py` uses CONFIG `VERSION`.
+- **Server draft (`sync/Code.gs`, NOT deployed):** the `assetsLocations` action, an `importFinishedItem` sender (on sync + hourly `assetsRetry`), and server-only status. Contract: `sync/assets-transfer-design.md` (v2).
+- **Tests:** `tests/test_v16.py`, `tests/assets_unit.js` (mocked UrlFetchApp), and a fake Assets in `tests/gas_server.js`. Shots: `tests/shots_v16.py` → `screenshots/v1.6.0/`.
+
 # TMC Workshop v5 sample (cut list + Send to Assets)
 
 Sample only. Not published. Live phones stay on v4 until Johan says yes.

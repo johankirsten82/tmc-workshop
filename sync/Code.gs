@@ -467,6 +467,112 @@ function importStockTransfer_(store, req) {
   try { rebuildViews_(store); } catch (e) {}
   return { ok: true, transferId: String(t.id), result: finishing ? 'duplicate' : 'accepted' };
 }
+/* ===== v1.6.0 SEND TO TMC ASSETS (DRAFT, not deployed; Johan 14 Nov 2026 06:15, contract agreed with TMC Assets 06:20) =====
+   Contract: sync/assets-transfer-design.md (v2). ALL Assets names live in ASSETS below, so a rename is a one-line change.
+   The phone never holds the Assets URL or codes: phones call OUR action 'assetsLocations' (signed-in token) and sync 'fa' items.
+   Script properties (filled at deploy, never in this file): ASSETS_WORKSHOP_CODE (code for importFinishedItem),
+   ASSETS_LOCATIONS_READ (code for listLocations). ASSETS_URL / ASSETS_APP_ID override the public defaults below.
+   If URL, app id or the item code is empty: nothing is sent, items stay 'waiting'. */
+var ASSETS = {
+  APP_ID: 'tmcassets',
+  URL: 'https://script.google.com/macros/s/AKfycbx4YSwRNb7fRIWeaU3RZyTslblvkYwDcGn5TPzODOB-GKffBOt8ds9oOK1hx1DExUq5/exec',  /* public */
+  P_URL: 'ASSETS_URL', P_APP: 'ASSETS_APP_ID', P_CODE: 'ASSETS_WORKSHOP_CODE', P_READ: 'ASSETS_LOCATIONS_READ',
+  ACT_LIST: 'listLocations', ACT_ITEM: 'importFinishedItem', V: 2,
+  OK_RESULTS: ['accepted', 'duplicate'],
+  STAY_WAITING: ['busy_try_again', 'bad_code', 'wrong_app'],  /* our config / their load: keep waiting, stop this run */
+  LOC_KEY: 'ASSETS_LOC', LOC_FRESH_MS: 3600000, LOC_CACHE_SEC: 21600, MAX_PER_RUN: 20,
+  KIND: 'fa', SERVER_FIELDS: ['status', 'sentAt', 'assetsResult', 'assetsItemId', 'rejectWhy', 'rejectedAt', 'lastError', 'lastTry'],
+  TYPES: [['table', /\b(table|tafel)\b|طاولة/], ['bed', /\b(bed|lit|bunk|stapelbed)\b|سرير/], ['tent', /\b(tent|tente)\b|خيمة/], ['container', /\b(container|conteneur|houer)\b|حاوية/]]
+};
+function assetsCfg_() { var p = props_(); return { url: String(p.getProperty(ASSETS.P_URL) || ASSETS.URL).trim(), app: String(p.getProperty(ASSETS.P_APP) || ASSETS.APP_ID).trim(), code: String(p.getProperty(ASSETS.P_CODE) || '').trim(), read: String(p.getProperty(ASSETS.P_READ) || '').trim() }; }
+function assetsPost_(url, body) {
+  var r = UrlFetchApp.fetch(url, { method: 'post', contentType: 'text/plain;charset=utf-8', payload: JSON.stringify(body), muteHttpExceptions: true, followRedirects: true });
+  var c = r.getResponseCode(); if (c < 200 || c >= 300) throw new Error('http_' + c);
+  return JSON.parse(r.getContentText());
+}
+function cut_(s, n) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, n); }
+function cleanLocs_(a) {
+  return (Array.isArray(a) ? a : []).filter(function (x) { return x && x.id && x.name; }).slice(0, 200).map(function (x) {
+    return { id: cut_(x.id, 64), name: cut_(x.name, 60), camp: cut_(x.camp || x.name, 60),
+      places: (Array.isArray(x.places) ? x.places : []).filter(function (p) { return p && p.id && p.name; }).slice(0, 300).map(function (p) { return { id: cut_(p.id, 64), name: cut_(p.name, 60) }; }) };
+  });
+}
+/* phones: {action:'assetsLocations', token} -> {ok, locations:[{id,name,camp,places:[{id,name}]}], at}. Cached; refreshed from Assets at most hourly. */
+function assetsLocations_(force) {
+  var cache = null, p = props_(), saved = null;
+  try { cache = CacheService.getScriptCache(); } catch (e) {}
+  try { saved = JSON.parse((cache && cache.get(ASSETS.LOC_KEY)) || p.getProperty(ASSETS.LOC_KEY) || 'null'); } catch (e) { saved = null; }
+  var cfg = assetsCfg_(), fresh = saved && Date.now() - (saved.at || 0) < ASSETS.LOC_FRESH_MS;
+  if ((force || !fresh) && cfg.url && cfg.read) {
+    try {
+      var j = assetsPost_(cfg.url, { action: ASSETS.ACT_LIST, code: cfg.read });
+      if (j && j.ok && Array.isArray(j.locations)) {
+        saved = { at: Date.now(), locations: cleanLocs_(j.locations) }; var s = JSON.stringify(saved);
+        if (cache) cache.put(ASSETS.LOC_KEY, s, ASSETS.LOC_CACHE_SEC);
+        if (s.length < 9000) p.setProperty(ASSETS.LOC_KEY, s);
+      }
+    } catch (e) {}
+  }
+  return { ok: true, locations: saved ? saved.locations : [], at: saved ? saved.at || 0 : 0 };
+}
+function assetsType_(name) { var n = String(name || '').toLowerCase(); for (var i = 0; i < ASSETS.TYPES.length; i++) if (ASSETS.TYPES[i][1].test(n)) return ASSETS.TYPES[i][0]; return 'other'; }
+function decStr_(n) { var x = Math.round(Number(n) * 1000) / 1000; return isFinite(x) && x > 0 ? String(x) : ''; }
+/* Workshop photos: phone uploads (action 'photo') to THIS app's Drive folder; the 'pl' record holds the Drive https link.
+   Only an https link is ever sent; a data URL or a missing / removed photo is sent as ''. */
+function assetsPhoto_(store, ph) {
+  ph = String(ph || ''); if (!ph) return '';
+  var r = store.map[PHOTO_KIND + ':' + ph]; if (!r || r.del) return '';
+  try { var d = JSON.parse(r.data || '{}'); return !d.removed && /^https:\/\//.test(String(d.url || '')) ? String(d.url) : ''; } catch (e) { return ''; }
+}
+/* the ONE place where an fa record becomes an Assets item */
+function assetsItem_(store, f, cfg) {
+  return { id: f.id, v: ASSETS.V, sourceApp: APP_ID, sourceItemId: f.id, destinationApp: cfg.app, at: f.at || new Date().toISOString(), by: cut_(f.by, 60),
+    campId: cut_(f.campId, 64), campName: cut_(f.campName, 60), placeId: cut_(f.placeId, 64), placeName: cut_(f.placeName, 60),
+    name: cut_(f.name, 120), type: assetsType_(f.name), qty: decStr_(f.qty), size: cut_(f.size, 120),
+    jobId: cut_(f.jobId, 64), jobName: cut_(f.jobName, 120), suggestedPerson: cut_(f.suggestedPerson, 120),
+    materials: (Array.isArray(f.materials) ? f.materials : []).slice(0, 50).map(function (m) { return { type: cut_(m.type, 120), qty: decStr_(m.qty), unit: m.unit === 'mm' ? 'mm' : m.unit === 'pcs' ? 'pcs' : 'm' }; }),
+    builtBefore: !!f.builtBefore, photo: assetsPhoto_(store, f.photo) };
+}
+/* phones may not set the Assets status: keep the server's, new items always start 'waiting' */
+function keepAssets_(store, changes) {
+  return (changes || []).map(function (c) {
+    if (!c || c.kind !== ASSETS.KIND || c.del || !c.data || typeof c.data !== 'object') return c;
+    var old = recData_(store, ASSETS.KIND, c.id), d = JSON.parse(JSON.stringify(c.data));
+    ASSETS.SERVER_FIELDS.forEach(function (k) { delete d[k]; if (old && old[k] != null) d[k] = old[k]; });
+    if (!d.status) d.status = 'waiting';
+    if (old && old.status === 'sent' && old.placeId) d.placeId = old.placeId;
+    return { kind: c.kind, id: c.id, u: c.u, del: c.del, data: d };
+  });
+}
+/* send 'waiting' items (ids = only these; null = all). sent on accepted|duplicate, rejected on an item refusal, waiting on network/config. */
+function assetsSend_(store, ids) {
+  var cfg = assetsCfg_(), out = { sent: 0, rejected: 0, waiting: 0 };
+  if (!cfg.url || !cfg.app || !cfg.code) { out.skipped = 'not_configured'; return out; }
+  var now = Date.now(), iso = new Date(now).toISOString(), ch = [], n = 0, stop = false;
+  Object.keys(store.map).sort().forEach(function (k) {
+    var r = store.map[k]; if (stop || r.kind !== ASSETS.KIND || r.del) return;
+    if (ids && ids.indexOf(r.id) < 0) return;
+    var d; try { d = JSON.parse(r.data || 'null'); } catch (e) { d = null; }
+    if (!d || (d.status && d.status !== 'waiting')) return;
+    if (n >= ASSETS.MAX_PER_RUN) { out.waiting++; return; } n++;
+    var res = null; try { res = assetsPost_(cfg.url, { action: ASSETS.ACT_ITEM, code: cfg.code, item: assetsItem_(store, d, cfg) }); } catch (e) { res = null; }
+    if (res && res.ok && ASSETS.OK_RESULTS.indexOf(res.result) >= 0) {
+      d.status = 'sent'; d.sentAt = iso; d.assetsResult = res.result; d.assetsItemId = String(res.itemId || ''); if (res.placeId) d.placeId = String(res.placeId); delete d.lastError; out.sent++;
+    } else if (res && res.ok === false && res.error && ASSETS.STAY_WAITING.indexOf(res.error) < 0) {
+      d.status = 'rejected'; d.rejectWhy = cut_(res.error, 40); d.rejectedAt = iso; out.rejected++;
+    } else {
+      out.waiting++; if (res && res.error) { out.error = cut_(res.error, 40); stop = true; } return;  /* network / busy / our config: try again later */
+    }
+    ch.push({ kind: ASSETS.KIND, id: r.id, u: Math.max(now, r.u + 1), del: 0, data: d });
+  });
+  if (ch.length) { merge_(store, ch, 'assets', now); writeRecs_(store); try { rebuildViews_(store); } catch (ve) {} }
+  return out;
+}
+/* time trigger (installed by setupOnce): retries every waiting item */
+function assetsRetry() {
+  var lock = LockService.getScriptLock(); if (!lock.tryLock(25000)) return 'busy';
+  try { return JSON.stringify(assetsSend_(readAll_(), null)); } finally { lock.releaseLock(); }
+}
 function handle_(req) {
   if (!req) return { ok: false, error: 'bad_request' };
   var lock = LockService.getScriptLock();
@@ -491,7 +597,8 @@ function handle_(req) {
       refused.me = me; viewerId = me.id;
       if (!me.admin) changes = addOnly_(store, changes, refused); else logFixes_(store, me, changes);
     } else return { ok: false, error: req.code ? 'bad_code' : 'need_login' };
-    changes = noDupReq_(store, changes, refused);
+    changes = keepAssets_(store, noDupReq_(store, changes, refused));  /* v1.6.0: Assets status is server-only */
+    if (req.action === 'assetsLocations') return assetsLocations_(!!(req.refresh && me && me.admin));  /* v1.6.0: read-only list from TMC Assets */
     if (req.action === 'photo' || req.action === 'photoget') return photo_(store, me, req);  /* VER 9 */
     if (req.action === 'report' || req.action === 'export') {  /* ticked actions, checked here on the server */
       var need = req.action === 'report' ? 'reports' : 'export';
@@ -504,6 +611,8 @@ function handle_(req) {
     var now = Date.now(), since = Number(req.since) || 0;
     var acc = merge_(store, changes, req.device, now), warn = '';
     if (acc) { writeRecs_(store); try { rebuildViews_(store); } catch (ve) { warn = 'views: ' + String(ve && ve.message || ve).slice(0, 200); } }
+    var faIds = (changes || []).filter(function (c) { return c && c.kind === ASSETS.KIND && !c.del && c.data && c.data.status === 'waiting'; }).map(function (c) { return String(c.id); });
+    if (faIds.length) { try { assetsSend_(store, faIds); } catch (ae) {} }  /* v1.6.0: send new finished items to Assets at once */
     var res = { ok: true, now: now, accepted: acc, records: changedSince_(store, since, me, viewerId) };
     if (refused.disc) { res.refused = refused.disc.length + (refused.n || 0); res.refusedWhy = refused.discWhy; res.refusedDiscard = refused.disc; }  /* SERVER CHANGE VER 7 */
     else if (refused.n) { res.refused = refused.n; res.refusedWhy = 'admin_only_fix'; }
@@ -528,14 +637,16 @@ function doGet() { return out_({ ok: true, app: 'TMC Workshop sync', hint: 'runn
 var APP_SHEET_NAME = 'TMC Workshop Sheet';  /* this app's own Sheet placeholder — not shared, not live */
 var TEAM_CODE_SETUP = '__TMC_TEAM_CODE__';
 /* Time triggers this app needs, e.g. { fn: 'dailyJob', hour: 5 }. Base has none. */
-var TRIGGERS = [];
+var TRIGGERS = [{ fn: 'assetsRetry', hours: 1 }];  /* v1.6.0: hourly retry of items waiting for Assets (assetsRetry) */
 function renameSheetOnce_() { try { var ss = SpreadsheetApp.getActive(); if (ss.getName() !== APP_SHEET_NAME) { ss.rename(APP_SHEET_NAME); return 'renamed'; } return 'ok'; } catch (e) { return 'skip'; } }
 function installTriggers_() {
   var have = {}, out = [];
   ScriptApp.getProjectTriggers().forEach(function (t) { var f = t.getHandlerFunction(); if (have[f]) ScriptApp.deleteTrigger(t); else have[f] = 1; });  /* drop duplicates */
   TRIGGERS.concat([PHOTO_TRIGGER]).forEach(function (t) {  /* VER 9: + daily photo cleanup */
     if (have[t.fn]) { out.push(t.fn + ':kept'); return; }
-    ScriptApp.newTrigger(t.fn).timeBased().everyDays(1).atHour(t.hour || 5).nearMinute(t.minute || 0).create(); have[t.fn] = 1; out.push(t.fn + ':added');
+    if (t.hours) ScriptApp.newTrigger(t.fn).timeBased().everyHours(t.hours).create();
+    else ScriptApp.newTrigger(t.fn).timeBased().everyDays(1).atHour(t.hour || 5).nearMinute(t.minute || 0).create();
+    have[t.fn] = 1; out.push(t.fn + ':added');
   });
   return out;
 }
@@ -555,4 +666,4 @@ function setupOnce() {
     return JSON.stringify(out);
   } finally { lock.releaseLock(); }
 }
-if (typeof module !== 'undefined') module.exports = { handle_: handle_, merge_: merge_, setupOnce: setupOnce, photoCleanup: photoCleanup, importStockTransfer_: importStockTransfer_ };
+if (typeof module !== 'undefined') module.exports = { handle_: handle_, merge_: merge_, setupOnce: setupOnce, photoCleanup: photoCleanup, importStockTransfer_: importStockTransfer_, assetsSend_: assetsSend_, assetsRetry: assetsRetry, assetsLocations_: assetsLocations_, assetsItem_: assetsItem_, assetsType_: assetsType_, keepAssets_: keepAssets_ };
