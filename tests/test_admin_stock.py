@@ -189,7 +189,7 @@ try:
     ok('Square tubing' in shop_dump and 'OTHER APP TUBING' not in shop_dump,'workshop Sheet has workshop stock only')
     ok('OTHER APP TUBING' in oth_dump and 'Square tubing' not in oth_dump,'other Sheet does not receive workshop stock')
     sw=open(os.path.join(TMP,'shop','sw.js'),encoding='utf-8').read()
-    ok('APP="tmcworkshop"' in sw and '-v1.7.0' in sw,'cache name is tmcworkshop-v1.7.0')
+    ok('APP="tmcworkshop"' in sw and '-v1.7.1' in sw,'cache name is tmcworkshop-v1.7.1')
     ok('tmcother-v' in open(os.path.join(TMP,'other','sw.js'),encoding='utf-8').read(),'other app cache name differs')
     ok(not errs,'no page errors %s'%errs[:3])
     b.close()

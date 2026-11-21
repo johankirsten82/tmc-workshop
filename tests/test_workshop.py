@@ -213,6 +213,33 @@ try:
     ok(g.locator('#wjJob').count()==1 and neu and neu[-1]['desc']=='Hex bar 20 x 20' and neu[-1].get('new')==1 and neu[-1].get('hMm')==20 and neu[-1].get('wMm')==20 and neu[-1].get('lMm')==3000 and neu[-1].get('usedMm')==1500,'new item is saved on the job with new:1, dimensions and length used')
     ok(g.evaluate("JSON.stringify(TMC.wBal('steel','EXAMPLE angle iron'))")==s0 and g.evaluate("TMC.wBal('rope','EXAMPLE rope').len")==r0 and not g.evaluate("TMC.all('k').some(k=>k.dir==='out'&&k.desc==='Hex bar 20 x 20')"),'a new item takes nothing off Workshop stock')
 
+    # v1.7.1: a new item typed earlier stays on the phone and pops up next time
+    g.click('#wjAddSteel');g.wait_for_timeout(200)
+    inp=buy_row(g,0).locator('.wjBuyName');inp.click();inp.fill('hex');g.wait_for_timeout(200)
+    ok(buy_row(g,0).locator('.sug div[data-n]:not(.wjSugNew)',has_text='Hex bar 20 x 20').count()==1,'typing hex finds the Square-style remembered item Hex bar 20 x 20')
+    pick_buy(g,'Hex bar 20 x 20',0)
+    row=buy_row(g,0)
+    h=row.locator('.wjBuyH');w=row.locator('.wjBuyW');l=row.locator('.wjBuyL')
+    ok(row.locator('.wjBuyName').input_value()=='Hex bar 20 x 20' and h.input_value()=='20' and w.input_value()=='20' and l.input_value()=='3000' and h.is_disabled() and w.is_disabled() and l.is_disabled() and 'wjLock' in (h.get_attribute('class') or ''),'selecting it fills and greys the name and H/W/L like a stock item')
+    ok(g.locator('.wjBuyNew').count()==1,'a remembered item with no stock stays marked new')
+    fill_buy(g,0,qty=2,used='800')
+    g.click('#wjAddMatRow');g.wait_for_timeout(150)
+    inp=buy_row(g,1).locator('.wjBuyName');inp.click();inp.fill('  HEX   BAR  20 x 20 ');g.wait_for_timeout(200)
+    ok(buy_row(g,1).locator('.sug div[data-n]:not(.wjSugNew)',has_text='Hex bar 20 x 20').count()==1 and buy_row(g,1).locator('.wjSugNew').count()==0,'the same name (trimmed, collapsed spaces, any case) is not offered as a new item again')
+    # an item that arrived only as a synced job material (other phone) also pops up
+    g.evaluate("""()=>{TMC.put('m','m-from-other',{id:'m-from-other',jobId:'j-other',mat:'steel',desc:'Square Tubing',qty:1,len:6,unit:'m',usedMm:1500,hMm:40,wMm:40,lMm:6000,new:1,by:'Pieter',at:new Date().toISOString()})}""")
+    g.click('#wjAddMatRow');g.wait_for_timeout(150)
+    inp=buy_row(g,2).locator('.wjBuyName');inp.click();inp.fill('squ');g.wait_for_timeout(200)
+    ok(buy_row(g,2).locator('.sug div[data-n]:not(.wjSugNew)',has_text='Square Tubing').count()==1,'a new item synced on a job m-record pops up on this phone with no server change')
+    known=g.evaluate("()=>{const n=TMC.wKnownItems().filter(x=>/hex bar 20 x 20/i.test(x.desc));return n.length}")
+    ok(known==1,'the remembered list keeps one Hex bar 20 x 20, not a duplicate')
+    # leave the unsaved extra rows; save only the selected remembered Hex bar
+    g.evaluate("()=>{const w=TMC.ws();w.matRows=(w.matRows||[]).slice(0,1);TMC.render()}")
+    g.wait_for_timeout(150)
+    fill_buy(g,0,qty=2,used='800');g.click('#wjSaveM');g.wait_for_timeout(400)
+    ok(g.locator('#wjJob').count()==1 and g.evaluate("JSON.stringify(TMC.wBal('steel','EXAMPLE angle iron'))")==s0 and g.evaluate("TMC.wBal('rope','EXAMPLE rope').len")==r0 and not g.evaluate("TMC.all('k').some(k=>k.dir==='out'&&k.desc==='Hex bar 20 x 20')"),'saving a remembered item again takes nothing off stock')
+    ok(g.evaluate("TMC.all('m').filter(m=>m.desc==='Hex bar 20 x 20'&&m.new).every(m=>m.new==1)"),'the second use stays new:1 for stock and Assets')
+
     # other app on the same phone
     o=ctx();op=o.new_page();op.goto(OTHER);op.wait_for_selector('#fName')
     name(op,'Johan Kirsten');setpin(op,'9753');synced(op)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v1.7.0: worker "Job finished: send to Assets", location from Assets (A-Z), photo, version label, server send (fake Assets). Mock Sheet only.
+"""v1.7.1: worker "Job finished: send to Assets", location from Assets (A-Z), photo, version label, server send (fake Assets). Mock Sheet only.
   python3 tests/test_v16.py /path/to/workshop
 """
 import os,sys,re,json,shutil,socket,subprocess,tempfile,threading,urllib.request,urllib.parse
@@ -107,21 +107,21 @@ try:
     name(pg,'Johan Kirsten');pg.wait_for_selector('#fPin2');setpin(pg,'2468')
     # --- version label + cache ---
     sw=open(os.path.join(TMP,'shop','sw.js'),encoding='utf-8').read()
-    ok('V=APP+"-v1.7.0"' in sw and pg.evaluate("TMC.verLabel()")=='v1.7.0','sw.js cache is tmcworkshop-v1.7.0 and the label is "v1.7.0"')
+    ok('V=APP+"-v1.7.1"' in sw and pg.evaluate("TMC.verLabel()")=='v1.7.1','sw.js cache is tmcworkshop-v1.7.1 and the label is "v1.7.1"')
     def vchk(pg):
         return pg.evaluate("""()=>{const v=document.getElementById('hVer'),n=document.querySelector('header .tN');if(!v)return null;const cs=getComputedStyle(v),r=v.getBoundingClientRect(),rn=n.getBoundingClientRect();
           return {txt:v.textContent,fs:cs.fontSize,col:cs.color,ws:cs.whiteSpace,lines:v.getClientRects().length,h:r.height,below:r.top>=rn.bottom-1,right:Math.abs(r.right-rn.right)<2,left:Math.abs(r.left-rn.left)<2,vis:r.width>0&&r.right<=innerWidth&&r.left>=0&&(()=>{const t=document.querySelector('header .t').getBoundingClientRect();return r.left>=t.left-1&&r.right<=t.right+1})()}}""")
     bad=[]
     for tab in pg.evaluate("[...document.querySelectorAll('nav [data-tab]')].map(e=>e.dataset.tab)"):
         pg.click('nav [data-tab=%s]'%tab);pg.wait_for_timeout(200);v=vchk(pg)
-        if not(v and v['txt']=='v1.7.0' and v['fs']=='10px' and v['col']=='rgb(51, 51, 51)' and v['ws']=='nowrap' and v['lines']==1 and v['h']<16 and v['below'] and v['vis']):bad.append((tab,v))
+        if not(v and v['txt']=='v1.7.1' and v['fs']=='10px' and v['col']=='rgb(51, 51, 51)' and v['ws']=='nowrap' and v['lines']==1 and v['h']<16 and v['below'] and v['vis']):bad.append((tab,v))
     for sc in ('list','assets'):
         pg.click('nav [data-tab=work]');screen(pg,sc);v=vchk(pg)
-        if not(v and v['txt']=='v1.7.0' and v['fs']=='10px' and v['lines']==1):bad.append((sc,v))
-    ok(not bad,'version label "v1.7.0" under the app name on every screen: 10px, #333333, one line at 360px %s'%bad)
+        if not(v and v['txt']=='v1.7.1' and v['fs']=='10px' and v['lines']==1):bad.append((sc,v))
+    ok(not bad,'version label "v1.7.1" under the app name on every screen: 10px, #333333, one line at 360px %s'%bad)
     pg.click('nav [data-tab=home]');pg.wait_for_timeout(150);ok(vchk(pg)['left'],'English: label starts on the left under the name')
     pg.select_option('#hLang','ar');pg.wait_for_timeout(300);v=vchk(pg)
-    ok(v and v['right'] and v['lines']==1 and v['txt']=='v1.7.0' and pg.evaluate("document.documentElement.dir")=='rtl','Arabic: label mirrored to the right, Latin digits, one line %s'%v)
+    ok(v and v['right'] and v['lines']==1 and v['txt']=='v1.7.1' and pg.evaluate("document.documentElement.dir")=='rtl','Arabic: label mirrored to the right, Latin digits, one line %s'%v)
     pg.select_option('#hLang','en');pg.wait_for_timeout(300)
     # --- data: stock + jobs ---
     pg.evaluate("""jobs=>{const at=new Date().toISOString();
@@ -288,5 +288,5 @@ try:
 finally:
     for gproc in gas:gproc.terminate()
     srv.shutdown();shutil.rmtree(TMP,ignore_errors=True)
-print('V1.7.0: %d passed, %d failed'%(P,F))
+print('V1.7.1: %d passed, %d failed'%(P,F))
 sys.exit(1 if F else 0)
